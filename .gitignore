@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dev-dist/
+certs/
+*.local
+
+# Personal data must never enter this repository. Backups live outside it, in
+# the private workspace — this is a second line of defence, not the first.
+health-checkin-backup-*.json
+health-checkin-safety-*.json
+data-backup/
+
+.DS_Store
