@@ -48,8 +48,12 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
     'true',
   )
 
-  // Yes/no.
-  await page.getByRole('button', { name: '冥想 2 分鐘：有做到' }).click()
+  // 冥想 is badge-scored like the rest of the one-tap items.
+  await page.getByRole('button', { name: '冥想：大致' }).click()
+  await expect(page.getByRole('button', { name: '冥想：大致' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 
   // Numbers: weight starts at its muted default and records on change.
   const weightInput = itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })

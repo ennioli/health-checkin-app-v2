@@ -219,10 +219,10 @@ export const PRESETS: Preset[] = [
   {
     key: 'meditation',
     category: 'mind',
-    name: '冥想 2 分鐘',
-    dataType: 'boolean',
+    name: '冥想',
+    dataType: 'fiveLevel',
     scoring: 'tiered',
-    choiceMap: { yes: 'gold', no: 'miss' },
+    hint: '≥ 2 分鐘',
   },
   {
     key: 'note',

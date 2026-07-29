@@ -221,4 +221,18 @@ describe('summarize', () => {
       counted: 3,
     })
   })
+
+  it('does not count an unfilled optional item as 未填', () => {
+    const note = makeItem({ dataType: 'text', category: 'mind', name: '今日備註' })
+    const version = makeVersion(note.id, { scoring: 'none', required: false })
+    const o = resolveDay(note, version, null, '2026-03-02', { dayIsOver: true })
+    expect(o.status).toBe('unfilled')
+    expect(summarize([o])).toEqual({
+      achieved: 0,
+      missed: 0,
+      unfilled: 0,
+      notApplicable: 0,
+      counted: 0,
+    })
+  })
 })

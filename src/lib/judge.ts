@@ -170,7 +170,10 @@ export function summarize(outcomes: DayOutcome[]): DaySummary {
       continue
     }
     if (o.status === 'unfilled') {
-      s.unfilled++
+      // Only required items are ever "outstanding". Leaving an optional item
+      // (今日備註, 血壓, 大餐日…) blank is a complete way to fill in the day,
+      // so it must not inflate the 未填 tally every single day.
+      if (o.version?.required) s.unfilled++
       if (o.achieved === false) {
         s.missed++
         s.counted++
