@@ -18,6 +18,9 @@ export interface SeedItem {
   applicableDays?: number[]
   bands?: Array<{ badge: string; min?: number | string; max?: number | string }>
   direction?: string
+  /** Marks the item as preset-backed, so preset reconciliation can see it. */
+  presetKey?: string
+  choiceMap?: Record<string, string>
 }
 
 /**
@@ -38,6 +41,7 @@ export function seedBackup(items: SeedItem[], records: Record<string, Record<str
         dataType: it.dataType ?? 'fiveLevel',
         unit: it.unit,
         createdAt: `${dayOffset(60)}T00:00:00.000Z`,
+        presetKey: it.presetKey,
       },
       versions: [
         {
@@ -50,6 +54,7 @@ export function seedBackup(items: SeedItem[], records: Record<string, Record<str
           scoring: it.scoring ?? 'tiered',
           direction: it.direction,
           bands: it.bands,
+          choiceMap: it.choiceMap,
           createdAt: `${dayOffset(60)}T00:00:00.000Z`,
         },
       ],

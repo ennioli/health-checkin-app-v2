@@ -108,6 +108,22 @@ export async function putItemsWithVersions(
   await tx.done
 }
 
+/**
+ * Overwrite a set of items and versions in one transaction. Used by the preset
+ * reconciliation on load, which must not leave an item pointing at a new
+ * control while its version still carries the old answer→badge map.
+ */
+export async function putDefinitions(
+  items: Item[],
+  versions: ItemVersion[],
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['items', 'itemVersions'], 'readwrite')
+  for (const item of items) await tx.objectStore('items').put(item)
+  for (const version of versions) await tx.objectStore('itemVersions').put(version)
+  await tx.done
+}
+
 export async function putRecord(record: DayRecord): Promise<void> {
   const db = await getDB()
   await db.put('records', record)

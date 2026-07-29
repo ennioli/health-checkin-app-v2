@@ -173,6 +173,41 @@ test('waist appears only on its applicable day (Sunday by default)', async ({ pa
   await expect(itemRow(page, '腰圍')).toHaveCount(0)
 })
 
+test('an install predating a preset change picks up its new shape on load', async ({ page }) => {
+  // 冥想 as it was stored before it became a five-level pick: a yes/no answer
+  // with an answer→badge map. Nothing but a reload should be needed to fix it.
+  await restoreSeed(
+    page,
+    seedBackup([
+      {
+        id: 'it-med',
+        category: 'mind',
+        name: '冥想 2 分鐘',
+        dataType: 'boolean',
+        presetKey: 'meditation',
+        choiceMap: { yes: 'gold', no: 'miss' },
+      },
+    ]),
+  )
+
+  await expect(page.getByRole('button', { name: '冥想 2 分鐘：有做到' })).toHaveCount(0)
+  await expect(itemRow(page, '冥想').locator('.hint')).toHaveText('≥ 2 分鐘')
+
+  // The badge actually judges — a stale choiceMap would score every pick as ⊘.
+  const gold = page.getByRole('button', { name: '冥想：完全' })
+  await gold.click()
+  await expect(gold).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('tab', { name: '近一週' }).click()
+  await expect(page.locator('.pill.ok')).toHaveText('達成 1')
+
+  // The fix was written to the database, not just painted on this render.
+  await page.reload()
+  await expect(page.getByRole('button', { name: '冥想：完全' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+})
+
 test('a custom banded item added from the menu shows its computed badge', async ({ page }) => {
   await page.getByRole('button', { name: '選單' }).click()
   await page.getByRole('button', { name: /計畫（項目與標準）/ }).click()

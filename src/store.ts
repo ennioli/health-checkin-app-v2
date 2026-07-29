@@ -15,6 +15,7 @@ import {
   deleteItemCascade,
   deleteRecord,
   loadSnapshot,
+  putDefinitions,
   putItemWithVersion,
   putItemsWithVersions,
   putRecord,
@@ -23,6 +24,7 @@ import {
   saveSettings,
   type Snapshot,
 } from './lib/db'
+import { presetDrift } from './lib/reconcile'
 import { groupVersionsByItem } from './lib/versions'
 import { ALL_DAYS, PRESETS, type Preset } from './lib/presets'
 import { CATEGORIES } from './types'
@@ -93,7 +95,16 @@ export function useStore(): Store {
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
-    const next = await loadSnapshot()
+    let next = await loadSnapshot()
+    // An install created before a preset changed shape still holds the old
+    // definition. Re-point it here, once, before anything renders — otherwise
+    // the phone keeps the retired control forever while a fresh install shows
+    // the new one. A no-op on every load after the first.
+    const drift = presetDrift(next.items, next.versions)
+    if (drift.items.length > 0) {
+      await putDefinitions(drift.items, drift.versions)
+      next = await loadSnapshot()
+    }
     setSnapshot({ ...next, items: sortItems(next.items) })
     setLoading(false)
   }, [])
