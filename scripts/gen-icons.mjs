@@ -1,6 +1,9 @@
 // Generates the PWA icons as PNGs with no image dependencies: raw RGBA pixels
 // through zlib, wrapped in the minimal PNG chunk structure. Run `npm run icons`
 // after changing the artwork below.
+//
+// Artwork: deep-green gradient, a cream heart, and a green check inside it —
+// the app's own cream/green language.
 import { deflateSync } from 'node:zlib'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
@@ -8,9 +11,10 @@ import { fileURLToPath } from 'node:url'
 
 const OUT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
-const BG_TOP = [24, 34, 56]
-const BG_BOTTOM = [15, 20, 32]
-const MARK = [110, 168, 254]
+const BG_TOP = [47, 92, 66] // lighter green
+const BG_BOTTOM = [24, 51, 37] // deep green
+const HEART = [246, 244, 236] // cream
+const CHECK = [31, 61, 46] // accent green
 
 function crc32(buf) {
   let c
@@ -60,7 +64,13 @@ function encodePNG(size, pixelAt) {
   ])
 }
 
-/** Distance from point p to segment ab, for drawing thick strokes. */
+/** Classic implicit heart: inside where (x²+y²−1)³ − x²·y³ ≤ 0 (y points up). */
+function inHeart(x, y) {
+  const a = x * x + y * y - 1
+  return a * a * a - x * x * y * y * y <= 0
+}
+
+/** Distance from point p to segment ab. */
 function distToSegment(px, py, ax, ay, bx, by) {
   const dx = bx - ax
   const dy = by - ay
@@ -76,25 +86,48 @@ function mix(a, b, t) {
   ]
 }
 
+// Check mark inside the heart, in heart-unit coordinates (y up).
+const CHECK_PTS = [
+  [-0.52, 0.1],
+  [-0.14, -0.32],
+  [0.62, 0.55],
+]
+const CHECK_W = 0.30 // stroke width in heart units
+
 function makeIcon(size) {
-  const s = size / 512
-  const stroke = 34 * s
-  // A check mark, drawn as two thick segments with a soft edge.
-  const pts = [
-    [150 * s, 268 * s],
-    [225 * s, 344 * s],
-    [366 * s, 176 * s],
-  ]
-  return encodePNG(size, (x, y) => {
-    const bg = mix(BG_TOP, BG_BOTTOM, y / size)
-    const d = Math.min(
-      distToSegment(x, y, pts[0][0], pts[0][1], pts[1][0], pts[1][1]),
-      distToSegment(x, y, pts[1][0], pts[1][1], pts[2][0], pts[2][1]),
-    )
-    const edge = 1.5 * s
-    const alpha = d <= stroke / 2 ? 1 : d >= stroke / 2 + edge ? 0 : 1 - (d - stroke / 2) / edge
-    if (alpha <= 0) return [...bg, 255]
-    return [...mix(bg, MARK, alpha), 255]
+  const cx = size / 2
+  const cy = size * 0.485
+  const s = size * 0.315 // heart scale
+  const SS = 3 // 3×3 supersampling for smooth edges
+
+  return encodePNG(size, (px, py) => {
+    let r = 0
+    let g = 0
+    let b = 0
+    for (let sy = 0; sy < SS; sy++) {
+      for (let sx = 0; sx < SS; sx++) {
+        const fx = px + (sx + 0.5) / SS
+        const fy = py + (sy + 0.5) / SS
+        // Background gradient.
+        let c = mix(BG_TOP, BG_BOTTOM, fy / size)
+        // Heart-local coordinates (y up).
+        const hx = (fx - cx) / s
+        const hy = -(fy - cy) / s
+        if (inHeart(hx, hy * 1.06)) {
+          c = HEART
+          const d = Math.min(
+            distToSegment(hx, hy, ...CHECK_PTS[0], ...CHECK_PTS[1]),
+            distToSegment(hx, hy, ...CHECK_PTS[1], ...CHECK_PTS[2]),
+          )
+          if (d <= CHECK_W / 2) c = CHECK
+        }
+        r += c[0]
+        g += c[1]
+        b += c[2]
+      }
+    }
+    const n = SS * SS
+    return [Math.round(r / n), Math.round(g / n), Math.round(b / n), 255]
   })
 }
 
