@@ -1,14 +1,15 @@
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { BADGE_ICON, CATEGORIES, CATEGORY_LABEL, CATEGORY_SUB } from '../types'
-import { today, weekdayLabel } from '../lib/dates'
+import { addDays, today, weekdayLabel } from '../lib/dates'
 import { feastDates, weekCounterTotal, weekDates, weekRows, weekSummary } from '../lib/week'
 import { versionInForce } from '../lib/versions'
 import type { Store } from '../store'
 
 /**
- * Mon–Sun review: the summary card lives here (deliberately not on the main
- * check-in screen), followed by one item × seven-day badge matrix per
- * category. Every cell is judged by the version in force on that cell's day.
+ * v1-style week review: ONE table for everything, with category header rows
+ * spanning the full width. The columns are a rolling 7-day window ending on
+ * the currently selected date, so the top ‹ › arrows slide the window.
+ * Every cell is judged by the version in force on that cell's day.
  */
 export function WeekView({
   store,
@@ -20,7 +21,8 @@ export function WeekView({
   onPickDate: (date: string) => void
 }) {
   const todayKey = today()
-  const dates = useMemo(() => weekDates(date), [date])
+  // Rolling window ending on the selected date (v1 behaviour).
+  const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)), [date])
 
   const rows = useMemo(
     () =>
@@ -30,95 +32,119 @@ export function WeekView({
 
   const summary = useMemo(() => weekSummary(rows, todayKey), [rows, todayKey])
 
+  // Contract counters stay calendar-week (Mon–Sun of the selected date),
+  // independent of the displayed window — the snack cap is a weekly contract,
+  // not a trailing-window one.
+  const calWeek = useMemo(() => weekDates(date), [date])
   const feastItem = store.snapshot.items.find((i) => i.presetKey === 'feast_day') ?? null
   const exempt = useMemo(
-    () => feastDates(feastItem?.id ?? null, store.recordsByKey, dates),
-    [feastItem, store.recordsByKey, dates],
+    () => feastDates(feastItem?.id ?? null, store.recordsByKey, calWeek),
+    [feastItem, store.recordsByKey, calWeek],
   )
-
   const snacksItem = store.snapshot.items.find((i) => i.presetKey === 'snacks') ?? null
   const snacksCap = snacksItem
     ? versionInForce(store.versionsByItem.get(snacksItem.id) ?? [], date)?.weeklyCap
     : undefined
   const snacksTotal = snacksItem
-    ? weekCounterTotal(snacksItem.id, store.recordsByKey, dates, exempt)
+    ? weekCounterTotal(snacksItem.id, store.recordsByKey, calWeek, exempt)
     : 0
 
   const range = `${fmtShort(dates[0])} – ${fmtShort(dates[6])}`
 
   return (
-    <>
-      <section className="card" aria-label="本週摘要">
-        <div className="cat-head">
-          <span className="cat-name">本週摘要</span>
-          <span className="cat-sub">{range}</span>
-        </div>
-        <div className="row" style={{ marginTop: 6 }}>
-          <span className="pill ok">達成 {summary.achieved}</span>
-          <span className="pill bad">未達 {summary.missed}</span>
-          <span className="pill warn">未填 {summary.unfilled}</span>
-          <span className="pill">不適用 {summary.notApplicable}</span>
-        </div>
-        <div className="row" style={{ marginTop: 8 }}>
-          {snacksItem && snacksCap !== undefined ? (
-            <span className={`chip${snacksTotal > snacksCap ? ' over' : ''}`}>
-              週零食飲料 {snacksTotal}/{snacksCap}
-            </span>
-          ) : null}
-          {feastItem ? <span className="chip">大餐日 {exempt.size}/1</span> : null}
-        </div>
-      </section>
+    <section className="card" aria-label="近一週">
+      <div className="cat-head">
+        <span className="cat-name">近一週</span>
+        <span className="cat-sub">{range}</span>
+      </div>
+      <p className="muted" style={{ marginTop: 0 }}>
+        視窗以目前選取日為結尾，可用上方 ‹ › 移動；左右滑動看全部日期。
+      </p>
 
-      {CATEGORIES.map((category) => {
-        const catRows = rows.filter(
-          (r) =>
-            r.item.category === category &&
-            // Hide rows that are disabled across the whole week.
-            r.cells.some((c) => c.outcome && c.outcome.status !== 'disabled'),
-        )
-        if (catRows.length === 0) return null
-        return (
-          <section className="card" key={category} aria-label={`${CATEGORY_LABEL[category]} 週表`}>
-            <div className="cat-head">
-              <span className="cat-name">{CATEGORY_LABEL[category]}</span>
-              <span className="cat-sub">{CATEGORY_SUB[category]}</span>
-            </div>
-            <div className="scroll-x">
-              <table className="week-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '32%' }} />
-                    {dates.map((d) => (
-                      <th key={d} className={d === todayKey ? 'today-col' : undefined}>
-                        <button type="button" onClick={() => onPickDate(d)} title={`前往 ${d}`}>
-                          {weekdayLabel(d).replace('週', '')}
-                          <br />
-                          {Number(d.slice(8))}
-                        </button>
-                      </th>
-                    ))}
+      <div className="row" style={{ marginBottom: 8 }}>
+        <span className="pill ok">達成 {summary.achieved}</span>
+        <span className="pill bad">未達 {summary.missed}</span>
+        <span className="pill warn">未填 {summary.unfilled}</span>
+        <span className="pill">不適用 {summary.notApplicable}</span>
+        {snacksItem && snacksCap !== undefined ? (
+          <span
+            className={`chip${snacksTotal > snacksCap ? ' over' : ''}`}
+            title="本週（週一至週日）累計，大餐日不計"
+          >
+            週零食飲料 {snacksTotal}/{snacksCap}
+          </span>
+        ) : null}
+        {feastItem ? (
+          <span className="chip" title="本週（週一至週日）">
+            大餐日 {exempt.size}/1
+          </span>
+        ) : null}
+      </div>
+
+      <div className="scroll-x">
+        <table className="week-table">
+          <thead>
+            <tr>
+              <th style={{ width: '26%' }} />
+              {dates.map((d) => (
+                <th
+                  key={d}
+                  className={
+                    (d === todayKey ? 'today-col ' : '') + (d === date ? 'sel-col' : '')
+                  }
+                >
+                  <button type="button" onClick={() => onPickDate(d)} title={`前往 ${d}`}>
+                    {fmtShort(d)}
+                    <br />
+                    {weekdayLabel(d).replace('週', '')}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {CATEGORIES.map((category) => {
+              const catRows = rows.filter(
+                (r) =>
+                  r.item.category === category &&
+                  // Hide rows that are disabled across the whole window.
+                  r.cells.some((c) => c.outcome && c.outcome.status !== 'disabled'),
+              )
+              if (catRows.length === 0) return null
+              return (
+                <Fragment key={category}>
+                  <tr className="week-cat-row">
+                    <td colSpan={8}>
+                      <strong>{CATEGORY_LABEL[category]}</strong>{' '}
+                      <span className="muted">{CATEGORY_SUB[category]}</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
                   {catRows.map((row) => (
                     <tr key={row.item.id}>
                       <td className="item-name-cell" title={row.item.name}>
                         {row.item.name}
+                        {row.item.unit ? (
+                          <span className="muted"> {row.item.unit}</span>
+                        ) : null}
                       </td>
                       {row.cells.map((cell) => (
-                        <td key={cell.date}>
+                        <td key={cell.date} className={cell.date === date ? 'sel-col' : undefined}>
                           <CellGlyph cell={cell} todayKey={todayKey} />
                         </td>
                       ))}
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )
-      })}
-    </>
+                </Fragment>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="muted" style={{ marginBottom: 0 }}>
+        💎🥇🥈🥉 徽章・✗ 未填（計未達）・— 不適用・數字/✔ 已記錄・· 未填
+      </p>
+    </section>
   )
 }
 

@@ -189,6 +189,25 @@ test('a custom banded item added from the menu shows its computed badge', async 
   await expect(row.locator('.badge')).toHaveText('⊘')
 })
 
+test('steppers adjust and commit from the muted default', async ({ page }) => {
+  // One tap on ▼ turns the uncommitted 77.6 into a recorded 77.5.
+  await page.getByRole('button', { name: '晨測體重 減少' }).click()
+  await expect(itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })).toHaveValue(
+    '77.5',
+  )
+
+  // Stepping one BP side commits both, the other side at its default.
+  await page.getByRole('button', { name: '早 舒張壓 增加' }).click()
+  await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('81')
+  await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('120')
+
+  await page.reload()
+  await expect(itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })).toHaveValue(
+    '77.5',
+  )
+  await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('81')
+})
+
 test('no horizontal scrolling at 320px and thumb-sized targets', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   const overflow = await page.evaluate(

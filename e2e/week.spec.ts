@@ -27,26 +27,25 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
 
   await page.getByRole('tab', { name: '近一週' }).click()
 
-  // The summary card lives here, not on the check-in screen.
-  const summary = page.locator('section.card').filter({ hasText: '本週摘要' })
-  await expect(summary).toBeVisible()
-  await expect(summary.locator('.pill.ok')).toContainText('達成 1')
-  await expect(summary.locator('.chip').first()).toHaveText('週零食飲料 1/2')
-  await expect(summary.locator('.chip').nth(1)).toHaveText('大餐日 0/1')
+  // One single card: summary pills on top, ONE table with category header
+  // rows spanning the width.
+  const card = page.locator('section.card').filter({ hasText: '近一週' })
+  await expect(card).toBeVisible()
+  await expect(card.locator('table')).toHaveCount(1)
+  await expect(card.locator('.week-cat-row')).toHaveCount(6) // 六大區
+  await expect(card.locator('.pill.ok')).toContainText('達成 1')
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/2')
+  await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 0/1')
 
-  // The fitness matrix shows today's gold in today's column.
-  const fitness = page.locator('section.card').filter({ hasText: 'strength-cardio-reshape' })
-  const stretchRow = fitness.locator('tr').filter({ hasText: '晨間伸展' })
+  // Today's gold shows in the stretch row; today is the highlighted last column.
+  const stretchRow = card.locator('tr').filter({ hasText: '晨間伸展' })
   await expect(stretchRow.locator('.cell-badge')).toHaveText('🥇')
+  await expect(card.locator('thead th.sel-col')).toHaveCount(1)
 
   // Clicking a day column jumps back to that day's check-in.
-  const dayOfMonth = String(new Date().getDate())
-  await fitness
-    .locator('thead th.today-col button')
-    .click()
+  await card.locator('thead th.today-col button').click()
   await expect(page.getByRole('tab', { name: '打卡' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.topbar')).toContainText('今天')
-  expect(dayOfMonth).toBeTruthy()
 })
 
 test('feast day moves snacks out of the weekly total in the summary', async ({ page }) => {
@@ -59,9 +58,9 @@ test('feast day moves snacks out of the weekly total in the summary', async ({ p
   await page.getByRole('switch', { name: '大餐日' }).click()
 
   await page.getByRole('tab', { name: '近一週' }).click()
-  const summary = page.locator('section.card').filter({ hasText: '本週摘要' })
-  await expect(summary.locator('.chip').first()).toHaveText('週零食飲料 0/2')
-  await expect(summary.locator('.chip').nth(1)).toHaveText('大餐日 1/1')
+  const card = page.locator('section.card').filter({ hasText: '近一週' })
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/2')
+  await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 1/1')
 })
 
 test('the week matrix keeps history judged by the standard of its own day', async ({ page }) => {
@@ -75,14 +74,8 @@ test('the week matrix keeps history judged by the standard of its own day', asyn
   await page.getByRole('button', { name: '今天' }).click()
 
   await page.getByRole('tab', { name: '近一週' }).click()
-  const weightCard = page.locator('section.card').filter({ hasText: 'steady-weight-loss' })
-  const bentoRow = weightCard.locator('tr').filter({ hasText: '便當達標' })
-  // Yesterday may fall in last week (if today is Monday) — then the cell is
-  // not in this week's matrix and the row simply has no badge.
-  const isMonday = new Date().getDay() === 1
-  if (!isMonday) {
-    // Yesterday's cell shows the pick; earlier elapsed days in the week are
-    // rightly ✗ (the seeded standard existed and the days went unfilled).
-    await expect(bentoRow.locator('.cell-badge', { hasText: '🥉' })).toHaveCount(1)
-  }
+  // The rolling window always ends on the selected date, so yesterday is
+  // always visible — no Monday special case anymore.
+  const bentoRow = page.locator('tr').filter({ hasText: '便當達標' })
+  await expect(bentoRow.locator('.cell-badge', { hasText: '🥉' })).toHaveCount(1)
 })

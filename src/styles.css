@@ -723,3 +723,76 @@ h2 {
   color: var(--muted);
   font-weight: 600;
 }
+
+/* Numeric field with explicit steppers (iOS shows no native spinner). */
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.stepper input {
+  border: none;
+  border-radius: 0;
+  min-height: var(--tap);
+  width: 60px;
+  text-align: center;
+  background: transparent;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.stepper input::-webkit-inner-spin-button,
+.stepper input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper input:focus-visible {
+  outline-offset: -3px;
+}
+
+.stepper-btns {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+}
+
+.stepper-btns button {
+  border: none;
+  background: var(--surface-2);
+  border-radius: 0;
+  min-height: 0;
+  height: 22px;
+  width: 32px;
+  padding: 0;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.stepper-btns button:first-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.stepper-btns button:active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Week table: category header rows + selected-day column highlight. */
+.week-cat-row td {
+  background: var(--surface-2);
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  border-top: none;
+}
+
+.week-table th.sel-col,
+.week-table td.sel-col {
+  background: var(--accent-soft);
+}

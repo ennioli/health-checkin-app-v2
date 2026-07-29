@@ -95,6 +95,58 @@ export function Toggle({
 }
 
 /**
+ * Numeric field with explicit ▲▼ steppers. iOS renders no spinner on a bare
+ * number input, so without these the phone would have no tap-to-adjust at
+ * all. Stepping from an uncommitted default commits it (±step).
+ */
+function NumField({
+  ariaLabel,
+  shown,
+  committed,
+  step,
+  disabled,
+  onCommit,
+}: {
+  ariaLabel: string
+  /** The string currently displayed (actual value or muted default). */
+  shown: string
+  committed: boolean
+  step: number
+  disabled?: boolean
+  onCommit: (value: number | null, raw?: string) => void
+}) {
+  const decimals = Number.isInteger(step) ? 0 : 1
+  const bump = (dir: 1 | -1) => {
+    const base = shown === '' ? 0 : Number(shown)
+    const next = Number((base + dir * step).toFixed(decimals))
+    onCommit(next)
+  }
+  return (
+    <span className="stepper">
+      <input
+        type="number"
+        inputMode="decimal"
+        step={step}
+        placeholder="—"
+        aria-label={ariaLabel}
+        disabled={disabled}
+        style={committed ? undefined : { color: 'var(--muted)' }}
+        value={shown}
+        onChange={(e) => onCommit(e.target.value === '' ? null : Number(e.target.value))}
+      />
+      <span className="stepper-btns">
+        <button type="button" tabIndex={-1} aria-label={`${ariaLabel} 增加`} disabled={disabled} onClick={() => bump(1)}>
+          ▲
+        </button>
+        <button type="button" tabIndex={-1} aria-label={`${ariaLabel} 減少`} disabled={disabled} onClick={() => bump(-1)}>
+          ▼
+        </button>
+      </span>
+    </span>
+  )
+}
+
+/**
  * Systolic/diastolic pair stored as a single "120/80" string.
  *
  * With no record yet, the preset default is shown muted. Nothing is written
@@ -121,31 +173,24 @@ export function BPInput({
     if (s === '' && d === '') onChange(null)
     else onChange(`${s}/${d}`)
   }
-  const style = committed ? undefined : { color: 'var(--muted)' }
   return (
     <div className="row" role="group" aria-label={label} style={{ gap: 4, flexWrap: 'nowrap' }}>
-      <input
-        className="num-sm"
-        type="number"
-        inputMode="numeric"
-        placeholder="—"
-        aria-label={`${label} 收縮壓`}
+      <NumField
+        ariaLabel={`${label} 收縮壓`}
+        shown={sys ?? ''}
+        committed={committed}
+        step={1}
         disabled={disabled}
-        style={style}
-        value={sys ?? ''}
-        onChange={(e) => emit(e.target.value, dia ?? '')}
+        onCommit={(v) => emit(v === null ? '' : String(v), dia ?? '')}
       />
       <span className="muted">/</span>
-      <input
-        className="num-sm"
-        type="number"
-        inputMode="numeric"
-        placeholder="—"
-        aria-label={`${label} 舒張壓`}
+      <NumField
+        ariaLabel={`${label} 舒張壓`}
+        shown={dia ?? ''}
+        committed={committed}
+        step={1}
         disabled={disabled}
-        style={style}
-        value={dia ?? ''}
-        onChange={(e) => emit(sys ?? '', e.target.value)}
+        onCommit={(v) => emit(sys ?? '', v === null ? '' : String(v))}
       />
     </div>
   )
@@ -268,19 +313,16 @@ export function ItemControl({
         : typeof fallback === 'number'
           ? String(fallback)
           : ''
+      const step = typeof fallback === 'number' && !Number.isInteger(fallback) ? 0.1 : 1
       return (
         <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-          <input
-            className="num"
-            type="number"
-            inputMode="decimal"
-            step={typeof fallback === 'number' && !Number.isInteger(fallback) ? 0.1 : 'any'}
-            placeholder="—"
-            aria-label={item.name}
+          <NumField
+            ariaLabel={item.name}
+            shown={shown}
+            committed={committed}
+            step={step}
             disabled={disabled}
-            style={committed ? undefined : { color: 'var(--muted)' }}
-            value={shown}
-            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+            onCommit={(v) => onChange(v)}
           />
           {item.unit ? <span className="muted">{item.unit}</span> : null}
         </div>
