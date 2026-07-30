@@ -22,7 +22,7 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
   await resetAndOnboard(page)
 
   // Make today distinctive: one gold, one snack.
-  await page.getByRole('button', { name: '晨間伸展：完全' }).click()
+  await page.getByRole('button', { name: '伸展：完全' }).click()
   await page.getByRole('button', { name: '零食＋含糖飲料 加一' }).click()
 
   await page.getByRole('tab', { name: '近一週' }).click()
@@ -34,11 +34,11 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
   await expect(card.locator('table')).toHaveCount(1)
   await expect(card.locator('.week-cat-row')).toHaveCount(6) // 六大區
   await expect(card.locator('.pill.ok')).toContainText('達成 1')
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/2')
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/4')
   await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 0/1')
 
   // Today's gold shows in the stretch row; today is the highlighted last column.
-  const stretchRow = card.locator('tr').filter({ hasText: '晨間伸展' })
+  const stretchRow = card.locator('tr').filter({ hasText: '伸展' })
   await expect(stretchRow.locator('.cell-badge')).toHaveText('🥇')
   await expect(card.locator('thead th.sel-col')).toHaveCount(1)
 
@@ -59,7 +59,7 @@ test('feast day moves snacks out of the weekly total in the summary', async ({ p
 
   await page.getByRole('tab', { name: '近一週' }).click()
   const card = page.locator('section.card').filter({ hasText: '近一週' })
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/2')
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/4')
   await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 1/1')
 })
 

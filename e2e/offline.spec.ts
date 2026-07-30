@@ -44,7 +44,7 @@ test('installed shell keeps working with the network cut', async ({ page, contex
   await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
 
   // ...and a check-in still writes and judges locally.
-  const stretch = page.getByRole('button', { name: '晨間伸展：完全' })
+  const stretch = page.getByRole('button', { name: '伸展：完全' })
   await stretch.click()
   await expect(stretch).toHaveAttribute('aria-pressed', 'true')
 

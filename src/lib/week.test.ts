@@ -91,7 +91,7 @@ describe('weekRows / weekSummary — history stays judged by its own standard', 
   })
 
   it('does not fail days before the item existed, nor future days', () => {
-    const item = makeItem({ dataType: 'fiveLevel', name: '晨間伸展' })
+    const item = makeItem({ dataType: 'fiveLevel', name: '伸展' })
     const version = makeVersion(item.id, { effectiveFrom: '2026-07-29' })
     const versions = new Map<string, ItemVersion[]>([[item.id, [version]]])
     const todayKey = '2026-07-30'

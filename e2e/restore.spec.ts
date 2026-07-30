@@ -202,7 +202,7 @@ test.describe('restore', () => {
     await resetToDataPage(page)
     // Record something first so the export carries data.
     await page.getByRole('button', { name: '返回' }).click()
-    await page.getByRole('button', { name: '晨間伸展：完全' }).click()
+    await page.getByRole('button', { name: '伸展：完全' }).click()
     await page.getByRole('button', { name: '零食＋含糖飲料 加一' }).click()
 
     await page.getByRole('button', { name: '選單' }).click()
@@ -229,7 +229,7 @@ test.describe('restore', () => {
     await expect(page.getByRole('heading', { name: '還原完成' })).toBeVisible()
 
     await page.getByRole('button', { name: '返回' }).click()
-    await expect(page.getByRole('button', { name: '晨間伸展：完全' })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: '伸展：完全' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )

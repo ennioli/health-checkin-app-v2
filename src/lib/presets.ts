@@ -104,7 +104,7 @@ export const PRESETS: Preset[] = [
     name: '宵夜截止',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '截止後無固體食物（預設 22:00）',
+    hint: '截止後無固體食物（預設 23:00）',
   },
   {
     key: 'bento',
@@ -143,8 +143,8 @@ export const PRESETS: Preset[] = [
     dataType: 'counter',
     scoring: 'none',
     required: false,
-    weeklyCap: 2,
-    hint: '契約計數・週上限 2',
+    weeklyCap: 4,
+    hint: '契約計數・週上限 4',
   },
   {
     key: 'fried',
@@ -169,10 +169,10 @@ export const PRESETS: Preset[] = [
   {
     key: 'stretch',
     category: 'fitness',
-    name: '晨間伸展',
+    name: '伸展',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '~10 分鐘・接在晨測體重之後',
+    hint: '~2 分鐘',
   },
   {
     key: 'strength',
@@ -196,7 +196,7 @@ export const PRESETS: Preset[] = [
     name: '穩態有氧',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '快走/橢圓機・RPE 4–5・40–60 分',
+    hint: '1 萬步',
   },
   {
     key: 'core',

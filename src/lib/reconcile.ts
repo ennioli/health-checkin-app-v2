@@ -20,13 +20,15 @@ export interface PresetDrift {
  * old preset was current, so without this an existing install keeps showing the
  * ✕/✔ control forever while a fresh install shows medals.
  *
- * Only the item's *identity* follows the preset: name, dataType, unit, and the
- * answer→badge map, which describes the control rather than the standard.
- * Everything the user can actually edit — enabled, required, applicableDays,
- * bands, note — is left exactly as they set it, and no record is touched. Old
- * values recorded under the previous control stay in the database; they simply
- * no longer earn a badge, which is the honest outcome given nothing can map a
- * "yes" onto one of five medals.
+ * Only the item's *identity* follows the preset: name, dataType, unit, the
+ * answer→badge map, which describes the control rather than the standard, and
+ * the weekly cap, which no editor exposes — the preset list is its only source,
+ * so an install that never re-ran setup would otherwise be stuck on the cap it
+ * was created with. Everything the user can actually edit — enabled, required,
+ * applicableDays, bands, note — is left exactly as they set it, and no record is
+ * touched. Old values recorded under the previous control stay in the database;
+ * they simply no longer earn a badge, which is the honest outcome given nothing
+ * can map a "yes" onto one of five medals.
  */
 export function presetDrift(items: Item[], versions: ItemVersion[]): PresetDrift {
   const nextItems: Item[] = []
@@ -35,26 +37,35 @@ export function presetDrift(items: Item[], versions: ItemVersion[]): PresetDrift
   for (const item of items) {
     const preset = item.presetKey ? BY_KEY.get(item.presetKey) : undefined
     if (!preset) continue
-    if (
-      item.name === preset.name &&
-      item.dataType === preset.dataType &&
-      item.unit === preset.unit
-    ) {
-      continue
-    }
 
-    const fixed: Item = { ...item, name: preset.name, dataType: preset.dataType }
-    if (preset.unit) fixed.unit = preset.unit
-    else delete fixed.unit
-    nextItems.push(fixed)
+    const identityDrifted =
+      item.name !== preset.name ||
+      item.dataType !== preset.dataType ||
+      item.unit !== preset.unit
+
+    if (identityDrifted) {
+      const fixed: Item = { ...item, name: preset.name, dataType: preset.dataType }
+      if (preset.unit) fixed.unit = preset.unit
+      else delete fixed.unit
+      nextItems.push(fixed)
+    }
 
     for (const version of versions) {
       if (version.itemId !== item.id) continue
+      const capDrifted = version.weeklyCap !== preset.weeklyCap
+      if (!identityDrifted && !capDrifted) continue
+
       const v: ItemVersion = { ...version }
-      if (preset.choiceMap) v.choiceMap = preset.choiceMap
-      else delete v.choiceMap
-      if (preset.choices) v.choices = preset.choices
-      else delete v.choices
+      if (identityDrifted) {
+        if (preset.choiceMap) v.choiceMap = preset.choiceMap
+        else delete v.choiceMap
+        if (preset.choices) v.choices = preset.choices
+        else delete v.choices
+      }
+      if (capDrifted) {
+        if (preset.weeklyCap !== undefined) v.weeklyCap = preset.weeklyCap
+        else delete v.weeklyCap
+      }
       nextVersions.push(v)
     }
   }

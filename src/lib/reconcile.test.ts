@@ -78,6 +78,24 @@ describe('presetDrift', () => {
     expect(drift.versions).toHaveLength(0)
   })
 
+  it('follows a changed weekly cap, which no editor lets the user set', () => {
+    const item = makeItem({
+      category: 'diet',
+      name: '零食＋含糖飲料',
+      dataType: 'counter',
+      presetKey: 'snacks',
+    })
+    // Created when the contract still said 2/week.
+    const version = makeVersion(item.id, { scoring: 'none', weeklyCap: 2 })
+    const drift = presetDrift([item], [version])
+
+    // The item itself never drifted, so only the version is rewritten.
+    expect(drift.items).toHaveLength(0)
+    expect(drift.versions).toHaveLength(1)
+    expect(drift.versions[0].weeklyCap).toBe(4)
+    expect(drift.versions[0].id).toBe(version.id)
+  })
+
   it('never touches custom items or unknown preset keys', () => {
     const custom = makeItem({ name: '喝水', dataType: 'number' })
     const retired = makeItem({ name: '無螢幕餐', presetKey: 'no_screen_meal' })
@@ -95,6 +113,11 @@ describe('presetDrift', () => {
         presetKey: p.key,
       }),
     )
-    expect(presetDrift(items, []).items).toHaveLength(0)
+    const versions = items.map((item, i) =>
+      makeVersion(item.id, { weeklyCap: PRESETS[i].weeklyCap }),
+    )
+    const drift = presetDrift(items, versions)
+    expect(drift.items).toHaveLength(0)
+    expect(drift.versions).toHaveLength(0)
   })
 })

@@ -101,7 +101,7 @@ export function useStore(): Store {
     // the phone keeps the retired control forever while a fresh install shows
     // the new one. A no-op on every load after the first.
     const drift = presetDrift(next.items, next.versions)
-    if (drift.items.length > 0) {
+    if (drift.items.length > 0 || drift.versions.length > 0) {
       await putDefinitions(drift.items, drift.versions)
       next = await loadSnapshot()
     }
