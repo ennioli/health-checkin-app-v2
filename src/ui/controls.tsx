@@ -43,7 +43,10 @@ export function Counter({
   disabled?: boolean
   onChange: (value: RecordValue) => void
 }) {
-  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0
+  // Nothing recorded yet still shows 0 — that is the resting state of a counter.
+  // It is muted so a real recorded 0 stays distinguishable from an untouched one.
+  const committed = typeof value === 'number' && Number.isFinite(value)
+  const n = committed ? (value as number) : 0
   return (
     <div className="counter" role="group" aria-label={label}>
       <button
@@ -54,7 +57,11 @@ export function Counter({
       >
         −
       </button>
-      <span className="count" aria-live="polite">
+      <span
+        className="count"
+        aria-live="polite"
+        style={committed ? undefined : { color: 'var(--muted)' }}
+      >
         {n}
       </span>
       <button

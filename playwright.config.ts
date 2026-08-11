@@ -17,6 +17,11 @@ export default defineConfig({
     { name: 'iphone', use: { ...devices['iPhone 13'] } },
     { name: 'macbook', use: { viewport: { width: 1280, height: 800 } } },
   ],
+  // `preview` serves dist/, not source — so a run against a stale build passes
+  // or fails on code nobody is looking at. The build lives in the `test:e2e`
+  // script rather than here on purpose: reuseExistingServer skips this command
+  // entirely when a preview server is already up, and would skip the build with
+  // it. Run e2e via `npm run test:e2e`, never bare `playwright test`.
   webServer: {
     command: 'npm run preview -- --port 4173',
     url: BASE,
