@@ -92,7 +92,7 @@ describe('presetDrift', () => {
     // The item itself never drifted, so only the version is rewritten.
     expect(drift.items).toHaveLength(0)
     expect(drift.versions).toHaveLength(1)
-    expect(drift.versions[0].weeklyCap).toBe(4)
+    expect(drift.versions[0].weeklyCap).toBe(PRESETS.find((p) => p.key === 'snacks')!.weeklyCap)
     expect(drift.versions[0].id).toBe(version.id)
   })
 

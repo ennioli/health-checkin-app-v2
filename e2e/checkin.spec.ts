@@ -90,26 +90,26 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
 
 test('snack cap chip counts the week and the feast day exempts today', async ({ page }) => {
   const chip = catCard(page, '飲食').locator('.chip')
-  await expect(chip).toHaveText('週零食飲料 0/4')
+  await expect(chip).toHaveText('週零食飲料 0/5')
 
   const plus = page.getByRole('button', { name: '零食＋含糖飲料 加一' })
-  for (let i = 0; i < 4; i++) await plus.click()
-  await expect(chip).toHaveText('週零食飲料 4/4')
+  for (let i = 0; i < 5; i++) await plus.click()
+  await expect(chip).toHaveText('週零食飲料 5/5')
   await expect(chip).not.toHaveClass(/over/)
 
-  // The fifth snack breaches the cap — chip flags it, nothing blocks.
+  // The sixth snack breaches the cap — chip flags it, nothing blocks.
   await plus.click()
-  await expect(chip).toHaveText('週零食飲料 5/4')
+  await expect(chip).toHaveText('週零食飲料 6/5')
   await expect(chip).toHaveClass(/over/)
 
   // Feast day: today's snacks stay recorded but leave the contract count.
   await page.getByRole('switch', { name: '大餐日' }).click()
-  await expect(chip).toHaveText('週零食飲料 0/4')
-  await expect(itemRow(page, '零食＋含糖飲料').locator('.count')).toHaveText('5')
+  await expect(chip).toHaveText('週零食飲料 0/5')
+  await expect(itemRow(page, '零食＋含糖飲料').locator('.count')).toHaveText('6')
 
   // Toggle back off and the count returns.
   await page.getByRole('switch', { name: '大餐日' }).click()
-  await expect(chip).toHaveText('週零食飲料 5/4')
+  await expect(chip).toHaveText('週零食飲料 6/5')
 })
 
 test('back-fill through the date navigation, same screen', async ({ page }) => {

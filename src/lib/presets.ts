@@ -143,8 +143,8 @@ export const PRESETS: Preset[] = [
     dataType: 'counter',
     scoring: 'none',
     required: false,
-    weeklyCap: 4,
-    hint: '契約計數・週上限 4',
+    weeklyCap: 5,
+    hint: '契約計數・週上限 5',
   },
   {
     key: 'fried',

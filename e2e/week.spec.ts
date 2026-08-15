@@ -34,7 +34,7 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
   await expect(card.locator('table')).toHaveCount(1)
   await expect(card.locator('.week-cat-row')).toHaveCount(6) // 六大區
   await expect(card.locator('.pill.ok')).toContainText('達成 1')
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/4')
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/5')
   await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 0/1')
 
   // Today's gold shows in the stretch row; today is the highlighted last column.
@@ -59,7 +59,7 @@ test('feast day moves snacks out of the weekly total in the summary', async ({ p
 
   await page.getByRole('tab', { name: '近一週' }).click()
   const card = page.locator('section.card').filter({ hasText: '近一週' })
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/4')
+  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/5')
   await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 1/1')
 })
 
