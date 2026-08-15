@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
@@ -21,9 +22,24 @@ const https =
     ? { key: readFileSync(keyPath), cert: readFileSync(certPath) }
     : undefined
 
+// Stamped into the bundle so 關於 can prove which commit is running. CI builds
+// from the pushed commit (actions/checkout provides .git), so production always
+// shows the deployed SHA; outside a git repo the stamp falls back to 'dev'.
+const buildId = (() => {
+  try {
+    const sha = execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
+      .toString()
+      .trim()
+    return `${sha}・${new Date().toISOString().slice(0, 10)}`
+  } catch {
+    return 'dev'
+  }
+})()
+
 export default defineConfig({
   base: BASE,
   server: { https },
+  define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     react(),
     VitePWA({

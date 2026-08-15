@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { addDays, formatDateHuman, today } from './lib/dates'
 import { useStore } from './store'
+import { About } from './ui/About'
 import { CheckinView } from './ui/CheckinView'
 import { DataPage } from './ui/DataPage'
 import { Onboarding } from './ui/Onboarding'
@@ -9,7 +10,7 @@ import { UpdatePrompt } from './ui/UpdatePrompt'
 import { WeekView } from './ui/WeekView'
 
 type View = 'checkin' | 'week'
-type SubPage = 'plan' | 'data' | null
+type SubPage = 'plan' | 'data' | 'about' | null
 
 export default function App() {
   const store = useStore()
@@ -58,9 +59,15 @@ export default function App() {
             <button type="button" aria-label="返回" onClick={() => setSubPage(null)}>
               ← 返回
             </button>
-            <h1>{subPage === 'plan' ? '計畫' : '資料'}</h1>
+            <h1>{subPage === 'plan' ? '計畫' : subPage === 'data' ? '資料' : '關於'}</h1>
           </div>
-          {subPage === 'plan' ? <Plan store={store} /> : <DataPage store={store} />}
+          {subPage === 'plan' ? (
+            <Plan store={store} />
+          ) : subPage === 'data' ? (
+            <DataPage store={store} />
+          ) : (
+            <About />
+          )}
         </main>
       </div>
     )
@@ -178,6 +185,9 @@ export default function App() {
             </button>
             <button type="button" className="menu-item" onClick={() => openSubPage('data')}>
               💾 資料（備份・還原）
+            </button>
+            <button type="button" className="menu-item" onClick={() => openSubPage('about')}>
+              ℹ️ 關於（版本）
             </button>
             <p className="menu-note">
               資料只存在這台裝置的瀏覽器。
