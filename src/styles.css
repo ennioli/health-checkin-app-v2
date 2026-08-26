@@ -214,7 +214,7 @@ p {
 }
 
 .item-label {
-  flex: 1 1 150px;
+  flex: 1 1 120px;
   min-width: 0;
 }
 
@@ -224,7 +224,10 @@ p {
 }
 
 .item-label .hint {
-  display: block;
+  /* Inline after the name (owner 2026-08-27): one line when it fits,
+     wraps naturally inside the label when it does not. */
+  display: inline;
+  margin-left: 0.4em;
   font-size: 0.78rem;
   color: var(--muted);
 }

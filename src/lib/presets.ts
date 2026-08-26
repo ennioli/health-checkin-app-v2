@@ -40,7 +40,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     defaultValue: '120/80',
-    hint: '收縮壓 / 舒張壓',
+    hint: '收縮 / 舒張',
   },
   {
     key: 'bp_evening',
@@ -50,7 +50,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     defaultValue: '120/80',
-    hint: '收縮壓 / 舒張壓',
+    hint: '收縮 / 舒張',
   },
 
   // ── 睡眠 sleep-early-habit ──────────────────────────────────────
@@ -60,7 +60,7 @@ export const PRESETS: Preset[] = [
     name: '08:00 ±15 分起床',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '今早・本卡＝今早結束的那一夜',
+    hint: '記昨夜',
   },
   {
     key: 'chess_curfew',
@@ -68,7 +68,7 @@ export const PRESETS: Preset[] = [
     name: '棋類宵禁',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '昨晚 23:00 後不開新局・00:00 關 App',
+    hint: '23:00 不開局',
   },
   {
     key: 'bed_0000',
@@ -76,7 +76,7 @@ export const PRESETS: Preset[] = [
     name: '00:00 上床・無螢幕',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '今日 00:00（昨晚午夜）',
+    hint: '昨晚午夜',
   },
   {
     key: 'sleep_0030',
@@ -84,7 +84,7 @@ export const PRESETS: Preset[] = [
     name: '00:30 前入睡',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '今日 00:30 前・依穿戴裝置判定',
+    hint: '依穿戴裝置',
   },
 
   // ── 減重 steady-weight-loss ─────────────────────────────────────
@@ -96,7 +96,7 @@ export const PRESETS: Preset[] = [
     unit: 'kg',
     scoring: 'recorded',
     defaultValue: 77.6,
-    hint: '起床如廁後・空腹',
+    hint: '如廁後空腹',
   },
   {
     key: 'nosnack_cutoff',
@@ -104,7 +104,7 @@ export const PRESETS: Preset[] = [
     name: '宵夜截止',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '截止後無固體食物（預設 23:00）',
+    hint: '23:00 後無固體',
   },
   {
     key: 'bento',
@@ -112,7 +112,7 @@ export const PRESETS: Preset[] = [
     name: '便當達標',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '非炸/飯≤半份/菜≥2/低鈉（兩餐）',
+    hint: '非炸・飯≤½・菜≥2',
   },
   {
     key: 'waist',
@@ -123,7 +123,7 @@ export const PRESETS: Preset[] = [
     scoring: 'recorded',
     required: false,
     applicableDays: [0], // 每週一次，預設週日量；可在計畫頁改
-    hint: '每週一次・肚臍高度吐氣後',
+    hint: '肚臍高・吐氣後',
   },
 
   // ── 飲食 good-diet-habit ────────────────────────────────────────
@@ -134,7 +134,7 @@ export const PRESETS: Preset[] = [
     dataType: 'toggle',
     scoring: 'none',
     required: false,
-    hint: '每週至多 1 天・當日零食計數不入週上限',
+    hint: '週≤1・零食不入上限',
   },
   {
     key: 'snacks',
@@ -144,7 +144,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     weeklyCap: 5,
-    hint: '契約計數・週上限 5',
+    hint: '週上限 5',
   },
   {
     key: 'fried',
@@ -153,7 +153,7 @@ export const PRESETS: Preset[] = [
     dataType: 'counter',
     scoring: 'none',
     required: false,
-    hint: '觀察計數・大餐日照記',
+    hint: '大餐照記',
   },
   {
     key: 'fruit',
@@ -162,7 +162,7 @@ export const PRESETS: Preset[] = [
     dataType: 'counter',
     scoring: 'none',
     required: false,
-    hint: '整顆水果・1 份≈1 拳・隨餐或餐後',
+    hint: '1 份≈1 拳',
   },
 
   // ── 健身 strength-cardio-reshape ────────────────────────────────
@@ -180,7 +180,7 @@ export const PRESETS: Preset[] = [
     name: '肌力',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '全身機台・2 組×8–12・RPE 7–8',
+    hint: '2×12・RPE 7',
   },
   {
     key: 'interval',
@@ -188,7 +188,6 @@ export const PRESETS: Preset[] = [
     name: '間歇有氧',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '4×(3 分 RPE 6–7 / 3 分輕鬆)',
   },
   {
     key: 'steady_cardio',
@@ -205,7 +204,7 @@ export const PRESETS: Preset[] = [
     dataType: 'fiveLevel',
     scoring: 'observe',
     required: false,
-    hint: '觀察項・可打徽章但不計入達成',
+    hint: '觀察・不計達成',
   },
 
   // ── 心境 mind（新增）────────────────────────────────────────────
@@ -232,7 +231,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     optional: true,
-    hint: '純情境紀錄，不計徽章、不計成敗',
+    hint: '情境紀錄・不計成敗',
   },
 ]
 
