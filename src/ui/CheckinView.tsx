@@ -217,8 +217,11 @@ function ItemRow({
   // record marked NA still renders (and can be cleared by picking a value).
   const na = outcome.status === 'markedNotApplicable'
 
+  // Compact controls (bp, counter, yes/no, toggle, number) share the line
+  // with the label; only the 5-badge picker and free text wrap below it.
+  const wraps = item.dataType === 'fiveLevel' || item.dataType === 'text'
   return (
-    <div className={item.dataType === 'bp' ? 'item-row bp-row' : 'item-row'}>
+    <div className={wraps ? 'item-row' : 'item-row inline-row'}>
       <div className="item-label">
         <span className="name">{item.name}</span>
         {/* BP rows drop the preset hint (owner 2026-08-27): the "/" between
