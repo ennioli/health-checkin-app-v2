@@ -99,8 +99,8 @@ p {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 6px 8px;
-  margin-bottom: 10px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
 }
 
 .topbar .date-main {
@@ -110,18 +110,19 @@ p {
 }
 
 .topbar .date-main strong {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   letter-spacing: 0.02em;
 }
 
 .topbar .date-main .muted {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
 .nav-arrow {
   min-width: var(--tap);
-  min-height: var(--tap);
+  /* 40 not 44 (owner 2026-08-27): trims the header; width keeps the tap area. */
+  min-height: 40px;
   border-radius: 12px;
   background: var(--accent-soft);
   border: none;
@@ -148,12 +149,12 @@ p {
 .segmented {
   display: flex;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .segmented button {
   flex: 1;
-  min-height: 48px;
+  min-height: 36px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -204,7 +205,8 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 0;
+  /* 7 not 10 (owner 2026-08-27): less scrolling on the phone. */
+  padding: 7px 0;
   border-top: 1px solid var(--line);
   flex-wrap: wrap;
 }
@@ -740,8 +742,9 @@ h2 {
 .stepper input {
   border: none;
   border-radius: 0;
-  min-height: var(--tap);
-  width: 60px;
+  /* Height is set by the 22px ▲▼ pair (45px), not the input. */
+  min-height: 36px;
+  width: 56px;
   text-align: center;
   background: transparent;
   -moz-appearance: textfield;

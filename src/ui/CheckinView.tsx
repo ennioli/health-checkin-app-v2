@@ -221,9 +221,12 @@ function ItemRow({
     <div className="item-row">
       <div className="item-label">
         <span className="name">{item.name}</span>
+        {/* BP rows drop the preset hint (owner 2026-08-27): the "/" between
+            the two fields already says 收縮/舒張, and the shorter label keeps
+            the fields on the same line instead of wrapping under it. */}
         {version.note ? (
           <span className="hint">{version.note}</span>
-        ) : itemHint(item) ? (
+        ) : item.dataType !== 'bp' && itemHint(item) ? (
           <span className="hint">{itemHint(item)}</span>
         ) : null}
       </div>
