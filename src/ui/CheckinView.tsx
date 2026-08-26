@@ -218,7 +218,7 @@ function ItemRow({
   const na = outcome.status === 'markedNotApplicable'
 
   return (
-    <div className="item-row">
+    <div className={item.dataType === 'bp' ? 'item-row bp-row' : 'item-row'}>
       <div className="item-label">
         <span className="name">{item.name}</span>
         {/* BP rows drop the preset hint (owner 2026-08-27): the "/" between
