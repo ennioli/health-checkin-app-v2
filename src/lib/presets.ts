@@ -73,10 +73,10 @@ export const PRESETS: Preset[] = [
   {
     key: 'bed_0000',
     category: 'sleep',
-    name: '00:00 上床・無螢幕',
+    name: '00:00 無螢幕（30 min 容許）',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '昨晚午夜',
+    hint: '昨晚・00:30 前算達成',
   },
   {
     key: 'sleep_0030',
@@ -84,7 +84,7 @@ export const PRESETS: Preset[] = [
     name: '00:30 前入睡',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '依穿戴裝置',
+    hint: '30 min 容許',
   },
 
   // ── 減重 steady-weight-loss ─────────────────────────────────────
