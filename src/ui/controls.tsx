@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { Badge, Item, ItemVersion, RecordValue } from '../types'
 import { BADGE_ICON, BADGE_LABEL, BADGE_PICK_ORDER } from '../types'
 
@@ -238,6 +239,108 @@ export function YesNo({
   )
 }
 
+const TEXT_COMMIT_MS = 700
+
+/**
+ * Free-text field that keeps its own draft.
+ *
+ * Writing straight through to the store on every keystroke round-trips the
+ * value through IndexedDB and a full reload, so React pushes `value` back into
+ * the element asynchronously — mid-composition on iOS that discards the IME's
+ * buffer, and the Pinyin keyboard commits the raw latin letters instead of the
+ * characters (owner, 2026-08-30). The draft lives here, the store is written on
+ * a pause, and the element is never overwritten while the user is mid-edit.
+ */
+export function TextField({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: RecordValue
+  disabled?: boolean
+  onChange: (value: RecordValue) => void
+}) {
+  const committed = typeof value === 'string' ? value : ''
+  const [draft, setDraft] = useState(committed)
+  // Composing = the IME is holding an unconfirmed buffer; dirty = the draft is
+  // ahead of the store. Refs, not state: both are read inside timers and event
+  // handlers that must see the current value, not the one from their render.
+  const composing = useRef(false)
+  const dirty = useRef(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Latest onChange, so the unmount flush never fires a stale closure.
+  const emit = useRef(onChange)
+  emit.current = onChange
+
+  // Adopt an external change (a restore, a day switch) only when this field is
+  // not mid-edit — otherwise it would yank the text out from under the typist.
+  useEffect(() => {
+    if (!dirty.current && !composing.current) setDraft(committed)
+  }, [committed])
+
+  const commit = (text: string) => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = null
+    if (!dirty.current) return
+    dirty.current = false
+    emit.current(text === '' ? null : text)
+  }
+
+  const schedule = (text: string) => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      // A pause inside composition is still composition — wait for it to end.
+      if (composing.current) return schedule(text)
+      commit(text)
+    }, TEXT_COMMIT_MS)
+  }
+
+  // Leaving the page without blurring (app switch, screen lock) must not lose
+  // the pause window's worth of typing.
+  const latest = useRef(draft)
+  latest.current = draft
+  useEffect(() => {
+    const flush = () => commit(latest.current)
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', flush)
+      flush()
+    }
+  }, [])
+
+  return (
+    <textarea
+      aria-label={label}
+      disabled={disabled}
+      value={draft}
+      placeholder="今天想記下什麼？"
+      onCompositionStart={() => {
+        composing.current = true
+      }}
+      onCompositionEnd={(e) => {
+        composing.current = false
+        // Chrome fires compositionend *after* the final input event, Safari
+        // before it — read the element rather than trusting the order.
+        const text = e.currentTarget.value
+        dirty.current = true
+        setDraft(text)
+        schedule(text)
+      }}
+      onChange={(e) => {
+        const text = e.target.value
+        dirty.current = true
+        setDraft(text)
+        if (!composing.current) schedule(text)
+      }}
+      onBlur={(e) => commit(e.target.value)}
+    />
+  )
+}
+
 /** Renders the right control for an item's data type. */
 export function ItemControl({
   item,
@@ -275,15 +378,7 @@ export function ItemControl({
         />
       )
     case 'text':
-      return (
-        <textarea
-          aria-label={item.name}
-          disabled={disabled}
-          value={typeof value === 'string' ? value : ''}
-          placeholder="今天想記下什麼？"
-          onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-        />
-      )
+      return <TextField label={item.name} value={value} disabled={disabled} onChange={onChange} />
     case 'time':
       return (
         <input

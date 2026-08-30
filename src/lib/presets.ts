@@ -76,7 +76,7 @@ export const PRESETS: Preset[] = [
     name: '00:00 無螢幕（30 min 容許）',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '昨晚・00:30 前算達成',
+    hint: '昨晚',
   },
   {
     key: 'sleep_0030',
@@ -119,7 +119,7 @@ export const PRESETS: Preset[] = [
     category: 'weight',
     name: '腰圍',
     dataType: 'number',
-    unit: '吋',
+    unit: 'cm',
     scoring: 'recorded',
     required: false,
     applicableDays: [0], // 每週一次，預設週日量；可在計畫頁改

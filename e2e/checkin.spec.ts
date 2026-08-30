@@ -139,6 +139,9 @@ test('back-fill through the date navigation, same screen', async ({ page }) => {
 })
 
 test('waist appears only on its applicable day (Sunday by default)', async ({ page }) => {
+  // Seeded in inches, the unit this item shipped with — an install that
+  // predates the switch to cm must be migrated by preset reconciliation, not
+  // left measuring in a unit nothing else in the app uses.
   await restoreSeed(
     page,
     seedBackup([
@@ -147,6 +150,7 @@ test('waist appears only on its applicable day (Sunday by default)', async ({ pa
         name: '腰圍',
         dataType: 'number',
         unit: '吋',
+        presetKey: 'waist',
         scoring: 'recorded',
         required: false,
         applicableDays: [0],
@@ -163,6 +167,7 @@ test('waist appears only on its applicable day (Sunday by default)', async ({ pa
   const sunday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   await page.getByLabel('選擇日期').fill(sunday)
   await expect(itemRow(page, '腰圍')).toHaveCount(1)
+  await expect(itemRow(page, '腰圍').locator('.muted')).toHaveText('cm')
 
   // And a Saturday shows nothing.
   const sat = new Date(d)
@@ -256,4 +261,97 @@ test('no horizontal scrolling at 320px and thumb-sized targets', async ({ page }
   const box = await page.getByRole('button', { name: '伸展：完全' }).boundingBox()
   expect(box!.width).toBeGreaterThanOrEqual(40)
   expect(box!.height).toBeGreaterThanOrEqual(44)
+})
+
+test('the note field survives IME composition and only writes once it settles', async ({
+  page,
+}) => {
+  // 今日備註 is an optional preset, so onboarding does not create it.
+  await restoreSeed(
+    page,
+    seedBackup([
+      {
+        id: 'it-note',
+        category: 'mind',
+        name: '今日備註',
+        dataType: 'text',
+        presetKey: 'note',
+        scoring: 'none',
+        required: false,
+      },
+    ]),
+  )
+
+  const note = page.getByRole('textbox', { name: '今日備註' })
+  await expect(note).toHaveValue('')
+
+  // Reads the note straight out of IndexedDB — the only way to tell "the draft
+  // is on screen" from "the draft has been committed".
+  const stored = () =>
+    page.evaluate(async () => {
+      const rows: Array<{ itemId: string; value: unknown }> = await new Promise((resolve) => {
+        const req = indexedDB.open('health-checkin-v2')
+        req.onsuccess = () => {
+          const db = req.result
+          const all = db.transaction('records').objectStore('records').getAll()
+          all.onsuccess = () => resolve(all.result)
+          all.onerror = () => resolve([])
+        }
+        req.onerror = () => resolve([])
+      })
+      const items: Array<{ id: string; presetKey?: string }> = await new Promise((resolve) => {
+        const req = indexedDB.open('health-checkin-v2')
+        req.onsuccess = () => {
+          const all = req.result.transaction('items').objectStore('items').getAll()
+          all.onsuccess = () => resolve(all.result)
+          all.onerror = () => resolve([])
+        }
+        req.onerror = () => resolve([])
+      })
+      const id = items.find((i) => i.presetKey === 'note')?.id
+      return rows.find((r) => r.itemId === id)?.value ?? null
+    })
+
+  // The Pinyin keyboard: latin letters land in the element while the IME holds
+  // an unconfirmed buffer, and only compositionend produces the characters.
+  const compose = (phase: 'start' | 'update' | 'end', text: string) =>
+    page.evaluate(
+      ([phase, text]) => {
+        const el = document.querySelector('textarea[aria-label="今日備註"]') as HTMLTextAreaElement
+        const native = Object.getOwnPropertyDescriptor(
+          HTMLTextAreaElement.prototype,
+          'value',
+        )!.set!
+        if (phase === 'start') el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+        native.call(el, text)
+        el.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: phase !== 'end' }))
+        if (phase === 'end')
+          el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: text }))
+      },
+      [phase, text] as const,
+    )
+
+  await note.focus()
+  await compose('start', 'ni')
+  await compose('update', 'nihao')
+  await expect(note).toHaveValue('nihao')
+
+  // Well past the commit window: a mid-composition write is what clobbered the
+  // IME buffer on iOS, so there must be nothing in the database yet.
+  await page.waitForTimeout(1000)
+  await expect(note).toHaveValue('nihao')
+  expect(await stored()).toBeNull()
+
+  // Picking the candidate replaces the buffer, and that is what gets written.
+  await compose('end', '你好')
+  await expect(note).toHaveValue('你好')
+  await expect.poll(stored).toBe('你好')
+
+  // Plain typing still commits, and blur flushes without waiting for the pause.
+  await note.fill('你好嗎')
+  await note.blur()
+  await expect.poll(stored).toBe('你好嗎')
+
+  await page.reload()
+  await expect(page.getByRole('textbox', { name: '今日備註' })).toHaveValue('你好嗎')
 })
