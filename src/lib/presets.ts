@@ -73,10 +73,10 @@ export const PRESETS: Preset[] = [
   {
     key: 'bed_0000',
     category: 'sleep',
-    name: '00:00 無螢幕（30 min 容許）',
+    name: '00:00 無螢幕',
     dataType: 'fiveLevel',
     scoring: 'tiered',
-    hint: '昨晚',
+    hint: '30 min 容許',
   },
   {
     key: 'sleep_0030',
@@ -149,7 +149,7 @@ export const PRESETS: Preset[] = [
   {
     key: 'fried',
     category: 'diet',
-    name: '油炸＋非原生食物',
+    name: '非原生食物',
     dataType: 'counter',
     scoring: 'none',
     required: false,
@@ -204,7 +204,7 @@ export const PRESETS: Preset[] = [
     dataType: 'fiveLevel',
     scoring: 'observe',
     required: false,
-    hint: '觀察・不計達成',
+    hint: '平日 17:40–18:00',
   },
 
   // ── 心境 mind（新增）────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { restoreSeed, seedBackup } from './seed'
+import { dayOffset, restoreSeed, seedBackup, seedRecord } from './seed'
 
 function catCard(page: Page, label: string) {
   return page.locator('section.card').filter({
@@ -354,4 +354,71 @@ test('the note field survives IME composition and only writes once it settles', 
 
   await page.reload()
   await expect(page.getByRole('textbox', { name: '今日備註' })).toHaveValue('你好嗎')
+})
+
+test('a number field opens on the value it last carried, not the preset default', async ({
+  page,
+}) => {
+  // Yesterday's weight, seeded through the real restore path so the item's
+  // standard already existed then.
+  const itemId = 'it-weight'
+  const yesterday = dayOffset(1)
+  await restoreSeed(
+    page,
+    seedBackup(
+      [
+        {
+          id: itemId,
+          category: 'weight',
+          name: '晨測體重',
+          dataType: 'number',
+          unit: 'kg',
+          presetKey: 'weight_morning',
+          scoring: 'recorded',
+        },
+      ],
+      { [yesterday]: { [itemId]: seedRecord(itemId, yesterday, 76.4) } },
+    ),
+  )
+
+  // Today opens on 76.4 — muted, so it is still a suggestion and not a record.
+  const field = itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })
+  await expect(field).toHaveValue('76.4')
+  await expect(field).toHaveAttribute('style', /--muted/)
+
+  // The steppers still move in 0.1 kg — step follows the preset default, not
+  // whatever happened to be recorded last.
+  await itemRow(page, '晨測體重').getByRole('button', { name: '晨測體重 增加' }).click()
+  await expect(field).toHaveValue('76.5')
+
+  // Nothing was carried into the record until that tap: yesterday is untouched.
+  await page.getByRole('button', { name: '前一天' }).click()
+  await expect(
+    itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' }),
+  ).toHaveValue('76.4')
+})
+
+test('the week matrix marks days an item does not apply to', async ({ page }) => {
+  await restoreSeed(
+    page,
+    seedBackup([
+      {
+        id: 'it-waist2',
+        category: 'weight',
+        name: '腰圍',
+        dataType: 'number',
+        unit: 'cm',
+        presetKey: 'waist',
+        scoring: 'recorded',
+        required: false,
+        applicableDays: [0],
+      },
+    ]),
+  )
+
+  await page.getByRole('tab', { name: '近一週' }).click()
+  const row = page.locator('tr', { has: page.locator('.item-name-cell', { hasText: '腰圍' }) })
+  // Six of the seven columns are "不適用", matching the legend — a blank cell
+  // read as six missed days instead of one applicable one.
+  await expect(row.locator('td', { hasText: '—' })).toHaveCount(6)
 })

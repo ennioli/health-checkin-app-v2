@@ -347,6 +347,7 @@ export function ItemControl({
   version,
   value,
   fallback,
+  carried,
   disabled,
   onChange,
 }: {
@@ -355,6 +356,8 @@ export function ItemControl({
   value: RecordValue
   /** Preset default shown muted while nothing is recorded yet. */
   fallback?: number | string
+  /** Last recorded value, preferred over the preset default when present. */
+  carried?: number
   disabled?: boolean
   onChange: (value: RecordValue) => void
 }) {
@@ -412,9 +415,14 @@ export function ItemControl({
       const committed = typeof value === 'number'
       const shown = committed
         ? String(value)
-        : typeof fallback === 'number'
-          ? String(fallback)
-          : ''
+        : typeof carried === 'number'
+          ? String(carried)
+          : typeof fallback === 'number'
+            ? String(fallback)
+            : ''
+      // Step size stays tied to the preset default, not to whatever was last
+      // recorded — a morning that happened to weigh exactly 77 must not turn
+      // the ▲▼ buttons into 1 kg jumps.
       const step = typeof fallback === 'number' && !Number.isInteger(fallback) ? 0.1 : 1
       return (
         <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>

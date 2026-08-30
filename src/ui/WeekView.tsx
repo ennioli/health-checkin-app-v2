@@ -157,7 +157,10 @@ function CellGlyph({
 }) {
   const o = cell.outcome
   if (!o || o.status === 'disabled') return <span className="muted">·</span>
-  if (o.status === 'notApplicableDay') return <span className="muted"> </span>
+  // The legend promises "— 不適用", and a day the item does not apply to is
+  // exactly that. Rendering it blank made 腰圍's Sunday-only row read as six
+  // empty days instead of one applicable one (owner, 2026-08-30).
+  if (o.status === 'notApplicableDay') return <span className="muted">—</span>
   if (o.status === 'markedNotApplicable') return <span className="muted">—</span>
   if (o.status === 'unfilled') {
     if (cell.date > todayKey) return <span className="muted"> </span>

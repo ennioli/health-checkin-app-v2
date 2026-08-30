@@ -26,6 +26,33 @@ export function useDayOutcomes(store: Store, date: string, dayIsOver: boolean): 
 }
 
 /**
+ * The last numeric value each item carried before `date`.
+ *
+ * Body weight moves by grams between mornings and the waist by nothing at all
+ * from one Sunday to the next, so opening the field on a fixed preset number
+ * means retyping a value the app already knows (owner, 2026-08-30). The carried
+ * value is shown muted exactly like the preset default was — nothing is written
+ * until the user commits it — and the preset default still covers the very
+ * first fill. Text and bp values are skipped: only numbers carry over.
+ */
+function useCarriedValues(store: Store, date: string): Map<string, number> {
+  return useMemo(() => {
+    const latest = new Map<string, { date: string; value: number }>()
+    for (const record of store.snapshot.records) {
+      if (record.date >= date) continue
+      if (typeof record.value !== 'number') continue
+      const prev = latest.get(record.itemId)
+      if (!prev || record.date > prev.date) {
+        latest.set(record.itemId, { date: record.date, value: record.value })
+      }
+    }
+    const out = new Map<string, number>()
+    for (const [itemId, hit] of latest) out.set(itemId, hit.value)
+    return out
+  }, [store.snapshot.records, date])
+}
+
+/**
  * The one check-in surface. Today and back-fill are the same screen — only the
  * date differs, so a past day is always judged by the standard in force then.
  */
@@ -41,6 +68,7 @@ export function CheckinView({
   const todayKey = today()
   const isToday = date === todayKey
   const outcomes = useDayOutcomes(store, date, date < todayKey)
+  const carried = useCarriedValues(store, date)
   const [editing, setEditing] = useState<{ item: Item; seed: EditorSeed } | null>(null)
 
   const struggles = useMemo(
@@ -119,6 +147,7 @@ export function CheckinView({
                 date={date}
                 category={category}
                 outcomes={group}
+                carried={carried}
                 week={week}
               />
             )
@@ -144,12 +173,14 @@ function CategoryCard({
   date,
   category,
   outcomes,
+  carried,
   week,
 }: {
   store: Store
   date: string
   category: (typeof CATEGORIES)[number]
   outcomes: DayOutcome[]
+  carried: Map<string, number>
   week: { dates: string[]; feastItem: Item | null; exempt: Set<string> }
 }) {
   // "未填" pill: any judged, required item still empty.
@@ -195,7 +226,13 @@ function CategoryCard({
       ) : null}
 
       {outcomes.map((outcome) => (
-        <ItemRow key={outcome.item.id} store={store} date={date} outcome={outcome} />
+        <ItemRow
+          key={outcome.item.id}
+          store={store}
+          date={date}
+          outcome={outcome}
+          carried={carried.get(outcome.item.id)}
+        />
       ))}
     </section>
   )
@@ -205,10 +242,13 @@ function ItemRow({
   store,
   date,
   outcome,
+  carried,
 }: {
   store: Store
   date: string
   outcome: DayOutcome
+  /** Last numeric value before this day, shown muted until committed. */
+  carried?: number
 }) {
   const { item, version, record } = outcome
   if (!version) return null
@@ -247,6 +287,7 @@ function ItemRow({
           version={version}
           value={record?.value ?? null}
           fallback={itemDefault(item)}
+          carried={carried}
           disabled={false}
           onChange={(value) => void store.setValue(item.id, date, value)}
         />
