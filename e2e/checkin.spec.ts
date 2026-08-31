@@ -155,7 +155,7 @@ test('back-fill through the date navigation, same screen', async ({ page }) => {
   await expect(page.getByRole('button', { name: '後一天' })).toBeDisabled()
 })
 
-test('waist appears only on its applicable day (Sunday by default)', async ({ page }) => {
+test('an item restricted to one weekday appears only on that day', async ({ page }) => {
   // Seeded in inches, the unit this item shipped with — an install that
   // predates the switch to cm must be migrated by preset reconciliation, not
   // left measuring in a unit nothing else in the app uses.

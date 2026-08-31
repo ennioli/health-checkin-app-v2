@@ -122,7 +122,9 @@ export const PRESETS: Preset[] = [
     unit: 'cm',
     scoring: 'recorded',
     required: false,
-    applicableDays: [0], // 每週一次，預設週日量；可在計畫頁改
+    // Open every day (owner 2026-08-31). Sunday-only went 26 days with zero
+    // readings — the cadence was never the problem, the friction was. Blank is
+    // not a miss here (required: false), and the field opens on the last value.
     hint: '肚臍高・吐氣後',
   },
 
