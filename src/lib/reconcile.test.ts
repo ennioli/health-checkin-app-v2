@@ -81,7 +81,7 @@ describe('presetDrift', () => {
   it('follows a changed weekly cap, which no editor lets the user set', () => {
     const item = makeItem({
       category: 'diet',
-      name: '零食＋含糖飲料',
+      name: '零食甜食',
       dataType: 'counter',
       presetKey: 'snacks',
     })

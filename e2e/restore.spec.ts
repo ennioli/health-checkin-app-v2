@@ -203,7 +203,7 @@ test.describe('restore', () => {
     // Record something first so the export carries data.
     await page.getByRole('button', { name: '返回' }).click()
     await page.getByRole('button', { name: '伸展：完全' }).click()
-    await page.getByRole('button', { name: '零食＋含糖飲料 加一' }).click()
+    await page.getByRole('button', { name: '零食甜食 加一' }).click()
 
     await page.getByRole('button', { name: '選單' }).click()
     await page.getByRole('button', { name: /資料（備份・還原）/ }).click()
@@ -234,7 +234,7 @@ test.describe('restore', () => {
       'true',
     )
     await expect(
-      page.locator('.item-row').filter({ has: page.locator('.name', { hasText: '零食＋含糖飲料' }) }).locator('.count'),
+      page.locator('.item-row').filter({ has: page.locator('.name', { hasText: '零食甜食' }) }).locator('.count'),
     ).toHaveText('1')
   })
 })

@@ -188,13 +188,16 @@ function CategoryCard({
     (o) => o.status === 'unfilled' && o.version?.required && o.version.scoring === 'tiered',
   )
 
-  // Weekly chip: the first counter with a cap (v1: 週零食飲料 0/2).
-  const capped = outcomes.find(
-    (o) => o.item.dataType === 'counter' && o.version?.weeklyCap !== undefined,
-  )
-  const capTotal = capped
-    ? weekCounterTotal(capped.item.id, store.recordsByKey, week.dates, week.exempt)
-    : 0
+  // One weekly chip per capped counter, labelled with the item's own name.
+  // 零食甜食 and 含糖飲料 are two separate contracts (owner 2026-08-31), so a
+  // single hard-coded chip would silently hide one of them.
+  const capped = outcomes
+    .filter((o) => o.item.dataType === 'counter' && o.version?.weeklyCap !== undefined)
+    .map((o) => ({
+      item: o.item,
+      cap: o.version!.weeklyCap!,
+      total: weekCounterTotal(o.item.id, store.recordsByKey, week.dates, week.exempt),
+    }))
 
   // Feast-day guard: warn (never block) on the week's second feast day.
   const feastOnOthers = week.feastItem
@@ -208,14 +211,15 @@ function CategoryCard({
         <span className="cat-name">{CATEGORY_LABEL[category]}</span>
         <span className="cat-sub">{CATEGORY_SUB[category]}</span>
         <span className="spacer" />
-        {capped?.version?.weeklyCap !== undefined ? (
+        {capped.map((c) => (
           <span
-            className={`chip${capTotal > capped.version.weeklyCap ? ' over' : ''}`}
+            key={c.item.id}
+            className={`chip${c.total > c.cap ? ' over' : ''}`}
             title="本週累計（週一至週日，大餐日不計）"
           >
-            週零食飲料 {capTotal}/{capped.version.weeklyCap}
+            週{c.item.name} {c.total}/{c.cap}
           </span>
-        ) : null}
+        ))}
         {hasUnfilled ? <span className="pill warn">未填</span> : null}
       </div>
 

@@ -41,13 +41,21 @@ export function WeekView({
     () => feastDates(feastItem?.id ?? null, store.recordsByKey, calWeek),
     [feastItem, store.recordsByKey, calWeek],
   )
-  const snacksItem = store.snapshot.items.find((i) => i.presetKey === 'snacks') ?? null
-  const snacksCap = snacksItem
-    ? versionInForce(store.versionsByItem.get(snacksItem.id) ?? [], date)?.weeklyCap
-    : undefined
-  const snacksTotal = snacksItem
-    ? weekCounterTotal(snacksItem.id, store.recordsByKey, calWeek, exempt)
-    : 0
+  // Every capped counter gets its own chip — 零食甜食 and 含糖飲料 are separate
+  // weekly contracts (owner 2026-08-31), and looking up one preset key by name
+  // would have shown whichever of them happened to be hard-coded here.
+  const capped = useMemo(
+    () =>
+      store.snapshot.items.flatMap((item) => {
+        if (item.dataType !== 'counter') return []
+        const cap = versionInForce(store.versionsByItem.get(item.id) ?? [], date)?.weeklyCap
+        if (cap === undefined) return []
+        return [
+          { item, cap, total: weekCounterTotal(item.id, store.recordsByKey, calWeek, exempt) },
+        ]
+      }),
+    [store.snapshot.items, store.versionsByItem, store.recordsByKey, date, calWeek, exempt],
+  )
 
   const range = `${fmtShort(dates[0])} – ${fmtShort(dates[6])}`
 
@@ -66,14 +74,15 @@ export function WeekView({
         <span className="pill bad">未達 {summary.missed}</span>
         <span className="pill warn">未填 {summary.unfilled}</span>
         <span className="pill">不適用 {summary.notApplicable}</span>
-        {snacksItem && snacksCap !== undefined ? (
+        {capped.map((c) => (
           <span
-            className={`chip${snacksTotal > snacksCap ? ' over' : ''}`}
+            key={c.item.id}
+            className={`chip${c.total > c.cap ? ' over' : ''}`}
             title="本週（週一至週日）累計，大餐日不計"
           >
-            週零食飲料 {snacksTotal}/{snacksCap}
+            週{c.item.name} {c.total}/{c.cap}
           </span>
-        ) : null}
+        ))}
         {feastItem ? (
           <span className="chip" title="本週（週一至週日）">
             大餐日 {exempt.size}/1

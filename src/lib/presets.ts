@@ -136,15 +136,31 @@ export const PRESETS: Preset[] = [
     required: false,
     hint: '週≤1・零食不入上限',
   },
+  // Split from the old 零食＋含糖飲料 (owner 2026-08-31). One counter priced a
+  // cookie and a full-sugar drink identically, which is wrong for this body:
+  // liquid fructose hits liver, TG and urate at once, a small solid sweet only
+  // calories. Two lines let the drink be capped hard without the cookie paying
+  // its price. Caps sum to 6 where the single line was 5 — deliberately looser
+  // in the mixed case, much tighter on the half that matters.
   {
     key: 'snacks',
     category: 'diet',
-    name: '零食＋含糖飲料',
+    name: '零食甜食',
     dataType: 'counter',
     scoring: 'none',
     required: false,
-    weeklyCap: 5,
-    hint: '週上限 5',
+    weeklyCap: 4,
+    hint: '週上限 4',
+  },
+  {
+    key: 'sugar_drink',
+    category: 'diet',
+    name: '含糖飲料',
+    dataType: 'counter',
+    scoring: 'none',
+    required: false,
+    weeklyCap: 2,
+    hint: '週上限 2',
   },
   {
     key: 'fried',

@@ -23,7 +23,7 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
 
   // Make today distinctive: one gold, one snack.
   await page.getByRole('button', { name: '伸展：完全' }).click()
-  await page.getByRole('button', { name: '零食＋含糖飲料 加一' }).click()
+  await page.getByRole('button', { name: '零食甜食 加一' }).click()
 
   await page.getByRole('tab', { name: '近一週' }).click()
 
@@ -34,8 +34,9 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
   await expect(card.locator('table')).toHaveCount(1)
   await expect(card.locator('.week-cat-row')).toHaveCount(6) // 六大區
   await expect(card.locator('.pill.ok')).toContainText('達成 1')
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 1/5')
-  await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 0/1')
+  await expect(card.locator('.chip').filter({ hasText: '零食甜食' })).toHaveText('週零食甜食 1/4')
+  await expect(card.locator('.chip').filter({ hasText: '含糖飲料' })).toHaveText('週含糖飲料 0/2')
+  await expect(card.locator('.chip').filter({ hasText: '大餐日' })).toHaveText('大餐日 0/1')
 
   // Today's gold shows in the stretch row; today is the highlighted last column.
   const stretchRow = card.locator('tr').filter({ hasText: '伸展' })
@@ -51,7 +52,7 @@ test('week view: summary card on top, badge matrix below, day columns navigate',
 test('feast day moves snacks out of the weekly total in the summary', async ({ page }) => {
   await resetAndOnboard(page)
 
-  const plus = page.getByRole('button', { name: '零食＋含糖飲料 加一' })
+  const plus = page.getByRole('button', { name: '零食甜食 加一' })
   await plus.click()
   await plus.click()
   await plus.click()
@@ -59,8 +60,8 @@ test('feast day moves snacks out of the weekly total in the summary', async ({ p
 
   await page.getByRole('tab', { name: '近一週' }).click()
   const card = page.locator('section.card').filter({ hasText: '近一週' })
-  await expect(card.locator('.chip').first()).toHaveText('週零食飲料 0/5')
-  await expect(card.locator('.chip').nth(1)).toHaveText('大餐日 1/1')
+  await expect(card.locator('.chip').filter({ hasText: '零食甜食' })).toHaveText('週零食甜食 0/4')
+  await expect(card.locator('.chip').filter({ hasText: '大餐日' })).toHaveText('大餐日 1/1')
 })
 
 test('the week matrix keeps history judged by the standard of its own day', async ({ page }) => {
