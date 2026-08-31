@@ -150,7 +150,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     weeklyCap: 4,
-    hint: '週上限 4',
+    hint: '週上限 4・一份按一次',
   },
   {
     key: 'sugar_drink',
@@ -160,7 +160,7 @@ export const PRESETS: Preset[] = [
     scoring: 'none',
     required: false,
     weeklyCap: 2,
-    hint: '週上限 2',
+    hint: '週上限 2・一杯＝一份',
   },
   {
     key: 'fried',
