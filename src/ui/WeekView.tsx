@@ -7,9 +7,14 @@ import type { Store } from '../store'
 
 /**
  * v1-style week review: ONE table for everything, with category header rows
- * spanning the full width. The columns are a rolling 7-day window ending on
- * the currently selected date, and 上一週/下一週 slide the window by seven days.
- * Every cell is judged by the version in force on that cell's day.
+ * spanning the full width. Every cell is judged by the version in force on
+ * that cell's day.
+ *
+ * The columns are a CALENDAR week, Monday to Sunday (owner 2026-09-02). A
+ * rolling window ending on the selected day made the header read one range
+ * while the weekly contracts underneath it counted another — the snack and
+ * drink caps have always been Mon–Sun — so the two now agree, and 上一週 /
+ * 下一週 step whole weeks.
  *
  * The window used to be moved with the check-in screen's ‹ › date arrows, but
  * this is a menu page now (owner 2026-09-02) and that header is not on screen —
@@ -27,8 +32,10 @@ export function WeekView({
   onPickDate: (date: string) => void
 }) {
   const todayKey = today()
-  // Rolling window ending on the selected date (v1 behaviour).
-  const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)), [date])
+  const dates = useMemo(() => weekDates(date), [date])
+  // This week is the last one worth stepping to: the days after today are
+  // rendered, but empty, and there is nothing beyond Sunday to look at.
+  const isCurrentWeek = dates.includes(todayKey)
 
   const rows = useMemo(
     () =>
@@ -38,10 +45,9 @@ export function WeekView({
 
   const summary = useMemo(() => weekSummary(rows, todayKey), [rows, todayKey])
 
-  // Contract counters stay calendar-week (Mon–Sun of the selected date),
-  // independent of the displayed window — the snack cap is a weekly contract,
-  // not a trailing-window one.
-  const calWeek = useMemo(() => weekDates(date), [date])
+  // The weekly contracts count the same seven days the table shows, now that
+  // the table is itself a calendar week.
+  const calWeek = dates
   const feastItem = store.snapshot.items.find((i) => i.presetKey === 'feast_day') ?? null
   const exempt = useMemo(
     () => feastDates(feastItem?.id ?? null, store.recordsByKey, calWeek),
@@ -76,12 +82,11 @@ export function WeekView({
         <button type="button" className="small" onClick={() => onDateChange(addDays(date, -7))}>
           ‹ 上一週
         </button>
-        {/* The window may end on a past day, but never on a future one. */}
         <button
           type="button"
           className="small"
-          disabled={date >= todayKey}
-          onClick={() => onDateChange(minDate(addDays(date, 7), todayKey))}
+          disabled={isCurrentWeek}
+          onClick={() => onDateChange(addDays(date, 7))}
         >
           下一週 ›
         </button>
@@ -89,7 +94,7 @@ export function WeekView({
         <button
           type="button"
           className="small ghost"
-          disabled={date === todayKey}
+          disabled={isCurrentWeek}
           onClick={() => onDateChange(todayKey)}
         >
           回到本週
@@ -97,7 +102,7 @@ export function WeekView({
       </div>
 
       <p className="muted" style={{ marginTop: 0 }}>
-        視窗以 {range} 為範圍；左右滑動看全部日期，點日期欄跳到那天的打卡。
+        一～日 {range}；左右滑動看全部日期，點日期欄跳到那天的打卡。
       </p>
 
       <div className="row" style={{ marginBottom: 8 }}>
@@ -221,11 +226,6 @@ function CellGlyph({
     return <span className="cell-badge" style={{ fontSize: '0.7rem' }}>{v}</span>
   }
   return <span className="cell-badge">✔</span>
-}
-
-/** Never let the window run past today, even when a step of 7 would. */
-function minDate(a: string, b: string): string {
-  return a < b ? a : b
 }
 
 function fmtShort(dateKey: string): string {

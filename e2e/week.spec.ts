@@ -92,6 +92,17 @@ test('the week page moves its own window, and never past today', async ({ page }
   await expect(page.locator('.topbar')).toHaveCount(0)
   const thisWeek = await range()
 
+  // Always a calendar week: Monday first, Sunday last, whatever day it is.
+  await expect(card.locator('thead th button')).toHaveText([
+    /一$/,
+    /二$/,
+    /三$/,
+    /四$/,
+    /五$/,
+    /六$/,
+    /日$/,
+  ])
+
   await expect(page.getByRole('button', { name: '下一週 ›' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '回到本週' })).toBeDisabled()
 
@@ -103,9 +114,11 @@ test('the week page moves its own window, and never past today', async ({ page }
   await page.getByRole('button', { name: '下一週 ›' }).click()
   expect(await range()).toBe(thisWeek)
 
-  // Stepping forward from four days ago lands on today, not four days ahead.
+  // Still Monday-first two weeks back, and 回到本週 returns from there.
   await page.getByRole('button', { name: '‹ 上一週' }).click()
   await page.getByRole('button', { name: '‹ 上一週' }).click()
+  await expect(card.locator('thead th button').first()).toHaveText(/一$/)
+  await expect(card.locator('thead th button').last()).toHaveText(/日$/)
   await expect(page.getByRole('button', { name: '回到本週' })).toBeEnabled()
   await page.getByRole('button', { name: '回到本週' }).click()
   expect(await range()).toBe(thisWeek)
