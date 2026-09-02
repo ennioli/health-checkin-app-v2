@@ -183,17 +183,19 @@ function CategoryCard({
   carried: Map<string, number>
   week: { dates: string[]; feastItem: Item | null; exempt: Set<string> }
 }) {
-  // Blood pressure is two readings taken ~15 hours apart — 早 in the morning,
-  // 晚 around 23:30 — and never both in one sitting. Stacking both rows spends a
-  // permanent row on a field that is wrong for the time of day, so the pair
-  // shares one row behind a 早/晚 tab (owner 2026-09-02). Keyed on dataType, not
-  // on the preset key, so any future pair of bp readings behaves the same.
-  const paired = outcomes.filter((o) => o.item.dataType === 'bp')
+  // Same-shaped value fields in one category share a single row behind a
+  // toggle (owner 2026-09-02): 早/晚 blood pressure are taken ~15 hours apart
+  // and never in one sitting, and 晨測體重/腰圍 are the same morning field with
+  // two different tapes. Two stacked rows spend permanent height on a field
+  // that is wrong for the moment. Grouped by dataType rather than preset keys,
+  // so a third reading of either kind joins its own group automatically.
+  const grouped = ['bp', 'number'].map((t) => outcomes.filter((o) => o.item.dataType === t))
+  const paired = grouped.find((g) => g.length > 1) ?? []
   const [shownPair, setShownPair] = useState(0)
   const active = paired[Math.min(shownPair, paired.length - 1)]
   const visible =
     paired.length > 1
-      ? outcomes.filter((o) => o.item.dataType !== 'bp' || o.item.id === active.item.id)
+      ? outcomes.filter((o) => o.item.dataType !== active.item.dataType || o.item.id === active.item.id)
       : outcomes
 
   // "未填" pill: any judged, required item still empty.
@@ -226,7 +228,7 @@ function CategoryCard({
             own line it cost more height than the row it saves. */}
         {paired.length > 1 ? null : <span className="cat-sub">{CATEGORY_SUB[category]}</span>}
         <span className="spacer" />
-        <div className="segmented compact" role="tablist" aria-label={`${CATEGORY_LABEL[category]}時段`}>
+        <div className="segmented compact" role="tablist" aria-label={`${CATEGORY_LABEL[category]}欄位切換`}>
           {paired.map((o, i) => {
             // A dot on the tab you are not looking at is the only way to tell a
             // reading you already recorded from one you still owe.

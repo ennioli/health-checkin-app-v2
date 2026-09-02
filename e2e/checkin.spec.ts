@@ -163,6 +163,27 @@ test('each capped counter gets its own chip, and the feast day exempts today', a
   await expect(drinkChip).toHaveText('週含糖飲料 1/2')
 })
 
+test('晨測體重 and 腰圍 share one row through the same toggle', async ({ page }) => {
+  // Same rule as the bp pair, reached through a different data type — the two
+  // morning tapes are one field with a switch, not two rows.
+  const card = catCard(page, '減重')
+  await expect(card.locator('.item-row')).toHaveCount(3) // 體重|腰圍, 宵夜截止, 便當達標
+  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toBeVisible()
+  await expect(page.getByRole('spinbutton', { name: '腰圍' })).toHaveCount(0)
+
+  await page.getByRole('tab', { name: /^腰圍/ }).click()
+  await expect(page.getByRole('spinbutton', { name: '腰圍' })).toBeVisible()
+  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveCount(0)
+
+  // Recording through the toggle stores against the right item.
+  await page.getByRole('spinbutton', { name: '腰圍' }).fill('92')
+  await expect(page.getByRole('tab', { name: '腰圍 已記錄' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveValue('77.6')
+  await page.getByRole('tab', { name: /^腰圍/ }).click()
+  await expect(page.getByRole('spinbutton', { name: '腰圍' })).toHaveValue('92')
+})
+
 test('back-fill through the date navigation, same screen', async ({ page }) => {
   // Onboarding versions take effect today, so back-fill needs an item whose
   // standard already existed yesterday — seeded through the real restore UI.

@@ -12,6 +12,7 @@
   --bad: #b8323f;
   --warn: #9a6a12;
   --warn-bg: #faf3e2;
+  --brown: #6f4b30;
   --radius: 14px;
   --tap: 44px;
   color-scheme: light;
@@ -169,11 +170,15 @@ p {
   flex: 0 0 auto;
 }
 
+/* White when idle, brown when selected (owner 2026-09-02), so it reads as a
+   field switch and never as the page-level 打卡/近一週 tabs. */
 .segmented.compact button {
   flex: 0 1 auto;
   min-height: 28px;
   padding: 0 12px;
   font-size: 0.85rem;
+  background: #fff;
+  color: var(--text);
 }
 
 .segmented button[aria-pressed='true'] {
@@ -181,6 +186,12 @@ p {
   border-color: #26332b;
   color: #fff;
   font-weight: 600;
+}
+
+.segmented.compact button[aria-pressed='true'] {
+  background: var(--brown);
+  border-color: var(--brown);
+  color: #fff;
 }
 
 /* ── Cards & item rows ───────────────────────────────────────────── */
@@ -218,9 +229,14 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  /* 7 not 10 (owner 2026-08-27): less scrolling on the phone. */
-  padding: 7px 0;
+  /* Row gap 4 not 10 (owner 2026-09-02): it only ever applies to the wrapped
+     badge rows, and those are 52% of the check-in page. Column gap stays 10 so
+     compact rows keep their breathing room between label and control. */
+  column-gap: 10px;
+  row-gap: 4px;
+  /* 7 → 4 (owner 2026-09-02). The 44px controls keep their own height, so the
+     tap targets are untouched; only the dead space around them shrinks. */
+  padding: 4px 0;
   border-top: 1px solid var(--line);
   flex-wrap: wrap;
 }
@@ -247,6 +263,8 @@ p {
 .item-label {
   flex: 1 1 120px;
   min-width: 0;
+  /* 1.5 wastes ~4px per row on what is nearly always a single line. */
+  line-height: 1.3;
 }
 
 .item-label .name {
