@@ -88,38 +88,34 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
   await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('80')
   // The evening pair was never touched — still the uncommitted default, and it
   // takes one tab tap to reach it.
-  await page.getByRole('tab', { name: /^晚/ }).click()
+  await page.getByRole('button', { name: '切換到 晚' }).click()
   await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveValue('120')
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveCount(0)
 })
 
-test('the 早/晚 blood-pressure tabs share one row and flag the one already taken', async ({
-  page,
-}) => {
+test('one button swaps 早/晚 blood pressure and flags the hidden one', async ({ page }) => {
   const card = catCard(page, '血壓')
-  // One row on screen, not two.
+  // One row on screen, and one button — the one naming what you would get.
   await expect(card.locator('.item-row')).toHaveCount(1)
-  await expect(page.getByRole('tab', { name: /^早/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.locator('.field-switch')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: '切換到 晚' })).toBeVisible()
 
-  // Recording the morning reading marks its tab, so the evening tab still reads
-  // as outstanding once you switch away from it.
   await page.getByRole('spinbutton', { name: '早 收縮壓' }).fill('118')
-  await expect(page.getByRole('tab', { name: '早 已記錄' })).toBeVisible()
-  await page.getByRole('tab', { name: /^晚/ }).click()
+  await page.getByRole('button', { name: '切換到 晚' }).click()
   await expect(card.locator('.item-row')).toHaveCount(1)
-  await expect(page.getByRole('tab', { name: '早 已記錄' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: '晚' })).toBeVisible()
+  // Now it offers the way back, and marks 早 as already taken.
+  await expect(page.getByRole('button', { name: '切換到 早（已記錄）' })).toBeVisible()
 
   // The evening reading is stored against its own item, not the morning one.
   await page.getByRole('spinbutton', { name: '晚 舒張壓' }).fill('71')
-  // Its own tab marking is the signal that the write reached the database —
-  // reloading before that would race the round-trip.
-  await expect(page.getByRole('tab', { name: '晚 已記錄' })).toBeVisible()
+  await page.getByRole('button', { name: '切換到 早（已記錄）' }).click()
+  // The dot moving to 晚 is the signal that the write reached the database.
+  await expect(page.getByRole('button', { name: '切換到 晚（已記錄）' })).toBeVisible()
+
   await page.reload()
-  await page.getByRole('tab', { name: /^晚/ }).click()
-  await expect(page.getByRole('spinbutton', { name: '晚 舒張壓' })).toHaveValue('71')
-  await page.getByRole('tab', { name: /^早/ }).click()
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('118')
+  await page.getByRole('button', { name: '切換到 晚（已記錄）' }).click()
+  await expect(page.getByRole('spinbutton', { name: '晚 舒張壓' })).toHaveValue('71')
 })
 
 test('each capped counter gets its own chip, and the feast day exempts today', async ({
@@ -163,7 +159,7 @@ test('each capped counter gets its own chip, and the feast day exempts today', a
   await expect(drinkChip).toHaveText('週含糖飲料 1/2')
 })
 
-test('晨測體重 and 腰圍 share one row through the same toggle', async ({ page }) => {
+test('晨測體重 and 腰圍 share one row through the same switch', async ({ page }) => {
   // Same rule as the bp pair, reached through a different data type — the two
   // morning tapes are one field with a switch, not two rows.
   const card = catCard(page, '減重')
@@ -171,16 +167,23 @@ test('晨測體重 and 腰圍 share one row through the same toggle', async ({ p
   await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toBeVisible()
   await expect(page.getByRole('spinbutton', { name: '腰圍' })).toHaveCount(0)
 
-  await page.getByRole('tab', { name: /^腰圍/ }).click()
+  // 腰圍 sits fourth in the item list, but the shared slot is the first one —
+  // switching must not shove 宵夜截止 and 便當達標 up or down the card.
+  const rowNames = () => card.locator('.item-row .name').allTextContents()
+  expect(await rowNames()).toEqual(['晨測體重', '宵夜截止', '便當達標'])
+
+  await page.getByRole('button', { name: '切換到 腰圍' }).click()
   await expect(page.getByRole('spinbutton', { name: '腰圍' })).toBeVisible()
   await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveCount(0)
+  expect(await rowNames()).toEqual(['腰圍', '宵夜截止', '便當達標'])
 
-  // Recording through the toggle stores against the right item.
+  // Recording through the switch stores against the right item.
   await page.getByRole('spinbutton', { name: '腰圍' }).fill('92')
-  await expect(page.getByRole('tab', { name: '腰圍 已記錄' })).toBeVisible()
+  await page.getByRole('button', { name: '切換到 晨測體重' }).click()
+  await expect(page.getByRole('button', { name: '切換到 腰圍（已記錄）' })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveValue('77.6')
-  await page.getByRole('tab', { name: /^腰圍/ }).click()
+  await page.getByRole('button', { name: '切換到 腰圍（已記錄）' }).click()
   await expect(page.getByRole('spinbutton', { name: '腰圍' })).toHaveValue('92')
 })
 

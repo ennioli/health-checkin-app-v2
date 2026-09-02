@@ -192,11 +192,26 @@ function CategoryCard({
   const grouped = ['bp', 'number'].map((t) => outcomes.filter((o) => o.item.dataType === t))
   const paired = grouped.find((g) => g.length > 1) ?? []
   const [shownPair, setShownPair] = useState(0)
-  const active = paired[Math.min(shownPair, paired.length - 1)]
-  const visible =
+  const at = Math.min(shownPair, Math.max(paired.length - 1, 0))
+  const active = paired[at]
+  const next = paired.length > 1 ? paired[(at + 1) % paired.length] : undefined
+  const nextRecorded =
+    next?.record != null && next.record.value !== null && next.record.value !== ''
+  // The shared field always occupies the FIRST group member's slot, and every
+  // other member is dropped from its own. Filtering in place would move 腰圍
+  // down to where it happens to sit in the list and shove 宵夜截止/便當達標
+  // around on every tap (owner 2026-09-02). The slot also keeps a stable React
+  // key, so switching swaps the field in place instead of remounting the row.
+  const slotKey = paired.length > 1 ? `pair-${paired[0].item.id}` : ''
+  const visible: Array<{ key: string; outcome: DayOutcome }> =
     paired.length > 1
-      ? outcomes.filter((o) => o.item.dataType !== active.item.dataType || o.item.id === active.item.id)
-      : outcomes
+      ? outcomes.flatMap((o) => {
+          if (o.item.dataType !== active.item.dataType) {
+            return [{ key: o.item.id, outcome: o }]
+          }
+          return o.item.id === paired[0].item.id ? [{ key: slotKey, outcome: active }] : []
+        })
+      : outcomes.map((o) => ({ key: o.item.id, outcome: o }))
 
   // "未填" pill: any judged, required item still empty.
   const hasUnfilled = outcomes.some(
@@ -228,27 +243,21 @@ function CategoryCard({
             own line it cost more height than the row it saves. */}
         {paired.length > 1 ? null : <span className="cat-sub">{CATEGORY_SUB[category]}</span>}
         <span className="spacer" />
-        <div className="segmented compact" role="tablist" aria-label={`${CATEGORY_LABEL[category]}欄位切換`}>
-          {paired.map((o, i) => {
-            // A dot on the tab you are not looking at is the only way to tell a
-            // reading you already recorded from one you still owe.
-            const recorded = o.record != null && o.record.value !== null && o.record.value !== ''
-            return (
-              <button
-                key={o.item.id}
-                type="button"
-                role="tab"
-                aria-pressed={i === shownPair}
-                aria-selected={i === shownPair}
-                aria-label={recorded ? `${o.item.name} 已記錄` : o.item.name}
-                onClick={() => setShownPair(i)}
-              >
-                {o.item.name}
-                {recorded ? <span aria-hidden="true"> ●</span> : null}
-              </button>
-            )
-          })}
-        </div>
+        {next ? (
+          // One button, not a two-tab strip (owner 2026-09-02): it names the
+          // field you are NOT looking at, so the word you tap is the thing you
+          // get. Three or more readings cycle. The dot is the only way to know
+          // the hidden one is already recorded.
+          <button
+            type="button"
+            className="field-switch"
+            aria-label={nextRecorded ? `切換到 ${next.item.name}（已記錄）` : `切換到 ${next.item.name}`}
+            onClick={() => setShownPair((i) => (i + 1) % paired.length)}
+          >
+            ⇄ {next.item.name}
+            {nextRecorded ? <span aria-hidden="true"> ●</span> : null}
+          </button>
+        ) : null}
 
         {capped.map((c) => (
           <span
@@ -269,9 +278,9 @@ function CategoryCard({
         </p>
       ) : null}
 
-      {visible.map((outcome) => (
+      {visible.map(({ key, outcome }) => (
         <ItemRow
-          key={outcome.item.id}
+          key={key}
           store={store}
           date={date}
           outcome={outcome}

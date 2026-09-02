@@ -163,24 +163,6 @@ p {
   color: var(--text);
 }
 
-/* Rides inside .cat-head, so it must not add a line of its own. */
-.segmented.compact {
-  gap: 6px;
-  margin: 0;
-  flex: 0 0 auto;
-}
-
-/* White when idle, brown when selected (owner 2026-09-02), so it reads as a
-   field switch and never as the page-level 打卡/近一週 tabs. */
-.segmented.compact button {
-  flex: 0 1 auto;
-  min-height: 28px;
-  padding: 0 12px;
-  font-size: 0.85rem;
-  background: #fff;
-  color: var(--text);
-}
-
 .segmented button[aria-pressed='true'] {
   background: #26332b;
   border-color: #26332b;
@@ -188,9 +170,24 @@ p {
   font-weight: 600;
 }
 
-.segmented.compact button[aria-pressed='true'] {
+/* One button that swaps the field under it (owner 2026-09-02): white ground,
+   brown ink and border, so it reads as a switch and never as the page-level
+   打卡/近一週 tabs. Rides inside .cat-head and must not add a line of its own. */
+.field-switch {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--brown);
+  color: var(--brown);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.field-switch:active {
   background: var(--brown);
-  border-color: var(--brown);
   color: #fff;
 }
 
