@@ -61,9 +61,11 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
   await weightInput.fill('70.4')
 
   // Blood pressure shows 120/80 as its default; editing one side commits
-  // both, the untouched side at its default.
+  // both, the untouched side at its default. 早 and 晚 share one row behind a
+  // tab — 早 is the one on screen when the page opens.
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('120')
   await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('80')
+  await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveCount(0)
   await page.getByRole('spinbutton', { name: '早 收縮壓' }).fill('118')
 
   // Counter.
@@ -84,8 +86,40 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
   ).toHaveValue('70.4')
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('118')
   await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('80')
-  // The evening pair was never touched — still the uncommitted default.
+  // The evening pair was never touched — still the uncommitted default, and it
+  // takes one tab tap to reach it.
+  await page.getByRole('tab', { name: /^晚/ }).click()
   await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveValue('120')
+  await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveCount(0)
+})
+
+test('the 早/晚 blood-pressure tabs share one row and flag the one already taken', async ({
+  page,
+}) => {
+  const card = catCard(page, '血壓')
+  // One row on screen, not two.
+  await expect(card.locator('.item-row')).toHaveCount(1)
+  await expect(page.getByRole('tab', { name: /^早/ })).toHaveAttribute('aria-pressed', 'true')
+
+  // Recording the morning reading marks its tab, so the evening tab still reads
+  // as outstanding once you switch away from it.
+  await page.getByRole('spinbutton', { name: '早 收縮壓' }).fill('118')
+  await expect(page.getByRole('tab', { name: '早 已記錄' })).toBeVisible()
+  await page.getByRole('tab', { name: /^晚/ }).click()
+  await expect(card.locator('.item-row')).toHaveCount(1)
+  await expect(page.getByRole('tab', { name: '早 已記錄' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: '晚' })).toBeVisible()
+
+  // The evening reading is stored against its own item, not the morning one.
+  await page.getByRole('spinbutton', { name: '晚 舒張壓' }).fill('71')
+  // Its own tab marking is the signal that the write reached the database —
+  // reloading before that would race the round-trip.
+  await expect(page.getByRole('tab', { name: '晚 已記錄' })).toBeVisible()
+  await page.reload()
+  await page.getByRole('tab', { name: /^晚/ }).click()
+  await expect(page.getByRole('spinbutton', { name: '晚 舒張壓' })).toHaveValue('71')
+  await page.getByRole('tab', { name: /^早/ }).click()
+  await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('118')
 })
 
 test('each capped counter gets its own chip, and the feast day exempts today', async ({

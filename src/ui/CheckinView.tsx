@@ -183,6 +183,19 @@ function CategoryCard({
   carried: Map<string, number>
   week: { dates: string[]; feastItem: Item | null; exempt: Set<string> }
 }) {
+  // Blood pressure is two readings taken ~15 hours apart — 早 in the morning,
+  // 晚 around 23:30 — and never both in one sitting. Stacking both rows spends a
+  // permanent row on a field that is wrong for the time of day, so the pair
+  // shares one row behind a 早/晚 tab (owner 2026-09-02). Keyed on dataType, not
+  // on the preset key, so any future pair of bp readings behaves the same.
+  const paired = outcomes.filter((o) => o.item.dataType === 'bp')
+  const [shownPair, setShownPair] = useState(0)
+  const active = paired[Math.min(shownPair, paired.length - 1)]
+  const visible =
+    paired.length > 1
+      ? outcomes.filter((o) => o.item.dataType !== 'bp' || o.item.id === active.item.id)
+      : outcomes
+
   // "未填" pill: any judged, required item still empty.
   const hasUnfilled = outcomes.some(
     (o) => o.status === 'unfilled' && o.version?.required && o.version.scoring === 'tiered',
@@ -209,8 +222,32 @@ function CategoryCard({
     <section className="card" aria-label={CATEGORY_LABEL[category]}>
       <div className="cat-head">
         <span className="cat-name">{CATEGORY_LABEL[category]}</span>
-        <span className="cat-sub">{CATEGORY_SUB[category]}</span>
+        {/* The tab strip rides in the header row that already exists — on its
+            own line it cost more height than the row it saves. */}
+        {paired.length > 1 ? null : <span className="cat-sub">{CATEGORY_SUB[category]}</span>}
         <span className="spacer" />
+        <div className="segmented compact" role="tablist" aria-label={`${CATEGORY_LABEL[category]}時段`}>
+          {paired.map((o, i) => {
+            // A dot on the tab you are not looking at is the only way to tell a
+            // reading you already recorded from one you still owe.
+            const recorded = o.record != null && o.record.value !== null && o.record.value !== ''
+            return (
+              <button
+                key={o.item.id}
+                type="button"
+                role="tab"
+                aria-pressed={i === shownPair}
+                aria-selected={i === shownPair}
+                aria-label={recorded ? `${o.item.name} 已記錄` : o.item.name}
+                onClick={() => setShownPair(i)}
+              >
+                {o.item.name}
+                {recorded ? <span aria-hidden="true"> ●</span> : null}
+              </button>
+            )
+          })}
+        </div>
+
         {capped.map((c) => (
           <span
             key={c.item.id}
@@ -223,13 +260,14 @@ function CategoryCard({
         {hasUnfilled ? <span className="pill warn">未填</span> : null}
       </div>
 
+
       {feastToday && feastOnOthers > 0 ? (
         <p className="muted" style={{ color: 'var(--warn)' }}>
           本週已有其他大餐日——每週建議至多 1 天（不會阻擋，僅提醒）。
         </p>
       ) : null}
 
-      {outcomes.map((outcome) => (
+      {visible.map((outcome) => (
         <ItemRow
           key={outcome.item.id}
           store={store}

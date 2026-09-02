@@ -162,6 +162,20 @@ p {
   color: var(--text);
 }
 
+/* Rides inside .cat-head, so it must not add a line of its own. */
+.segmented.compact {
+  gap: 6px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.segmented.compact button {
+  flex: 0 1 auto;
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
 .segmented button[aria-pressed='true'] {
   background: #26332b;
   border-color: #26332b;
