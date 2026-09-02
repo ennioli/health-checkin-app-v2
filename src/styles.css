@@ -191,6 +191,18 @@ p {
   color: #fff;
 }
 
+/* Week-window controls: this page has no date header of its own. */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.week-nav .spacer {
+  flex: 1;
+}
+
 /* ── Cards & item rows ───────────────────────────────────────────── */
 
 .card {

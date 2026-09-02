@@ -28,7 +28,7 @@ test('installed shell keeps working with the network cut', async ({ page, contex
   await page.getByRole('button', { name: /開始使用/ }).click()
   // Let setup finish writing before the network is pulled, otherwise the
   // reload can land on a half-written database rather than an offline failure.
-  await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
 
   // Wait for the service worker to take control and finish precaching.
   const scope = await page.evaluate(async () => {
@@ -41,7 +41,7 @@ test('installed shell keeps working with the network cut', async ({ page, contex
   await page.reload()
 
   // The app shell still boots...
-  await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
 
   // ...and a check-in still writes and judges locally.
   const stretch = page.getByRole('button', { name: '伸展：完全' })

@@ -80,7 +80,7 @@ async function restoreInto(page: Page, payload: unknown) {
   })
   await page.goto('./')
   await page.getByRole('button', { name: /開始使用/ }).click()
-  await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
   await page.getByRole('button', { name: '選單' }).click()
   await page.getByRole('button', { name: /資料（備份・還原）/ }).click()
   await page.locator('input[type=file]').setInputFiles({

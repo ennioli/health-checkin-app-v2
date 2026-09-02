@@ -8,16 +8,22 @@ import type { Store } from '../store'
 /**
  * v1-style week review: ONE table for everything, with category header rows
  * spanning the full width. The columns are a rolling 7-day window ending on
- * the currently selected date, so the top ‹ › arrows slide the window.
+ * the currently selected date, and 上一週/下一週 slide the window by seven days.
  * Every cell is judged by the version in force on that cell's day.
+ *
+ * The window used to be moved with the check-in screen's ‹ › date arrows, but
+ * this is a menu page now (owner 2026-09-02) and that header is not on screen —
+ * so the controls belong here.
  */
 export function WeekView({
   store,
   date,
+  onDateChange,
   onPickDate,
 }: {
   store: Store
   date: string
+  onDateChange: (date: string) => void
   onPickDate: (date: string) => void
 }) {
   const todayKey = today()
@@ -65,8 +71,33 @@ export function WeekView({
         <span className="cat-name">近一週</span>
         <span className="cat-sub">{range}</span>
       </div>
+
+      <div className="week-nav">
+        <button type="button" className="small" onClick={() => onDateChange(addDays(date, -7))}>
+          ‹ 上一週
+        </button>
+        {/* The window may end on a past day, but never on a future one. */}
+        <button
+          type="button"
+          className="small"
+          disabled={date >= todayKey}
+          onClick={() => onDateChange(minDate(addDays(date, 7), todayKey))}
+        >
+          下一週 ›
+        </button>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="small ghost"
+          disabled={date === todayKey}
+          onClick={() => onDateChange(todayKey)}
+        >
+          回到本週
+        </button>
+      </div>
+
       <p className="muted" style={{ marginTop: 0 }}>
-        視窗以目前選取日為結尾，可用上方 ‹ › 移動；左右滑動看全部日期。
+        視窗以 {range} 為範圍；左右滑動看全部日期，點日期欄跳到那天的打卡。
       </p>
 
       <div className="row" style={{ marginBottom: 8 }}>
@@ -190,6 +221,11 @@ function CellGlyph({
     return <span className="cell-badge" style={{ fontSize: '0.7rem' }}>{v}</span>
   }
   return <span className="cell-badge">✔</span>
+}
+
+/** Never let the window run past today, even when a step of 7 would. */
+function minDate(a: string, b: string): string {
+  return a < b ? a : b
 }
 
 function fmtShort(dateKey: string): string {

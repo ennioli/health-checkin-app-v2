@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { dayOffset, openAllCards, restoreSeed, seedBackup, seedRecord } from './seed'
+import { dayOffset, openAllCards, openWeek, restoreSeed, seedBackup, seedRecord } from './seed'
 
 function catCard(page: Page, label: string) {
   return page.locator('section.card').filter({
@@ -26,7 +26,7 @@ async function resetAndOnboard(page: Page) {
   await page.goto('./')
   await openAllCards(page)
   await page.getByRole('button', { name: /開始使用/ }).click()
-  await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
 }
 
 test.beforeEach(async ({ page }) => {
@@ -277,7 +277,7 @@ test('an install predating a preset change picks up its new shape on load', asyn
   const gold = page.getByRole('button', { name: '冥想：完全' })
   await gold.click()
   await expect(gold).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('tab', { name: '近一週' }).click()
+  await openWeek(page)
   await expect(page.locator('.pill.ok')).toHaveText('達成 1')
 
   // The fix was written to the database, not just painted on this render.
@@ -492,7 +492,7 @@ test('the week matrix marks days an item does not apply to', async ({ page }) =>
     ]),
   )
 
-  await page.getByRole('tab', { name: '近一週' }).click()
+  await openWeek(page)
   const row = page.locator('tr', { has: page.locator('.item-name-cell', { hasText: '腰圍' }) })
   // Six of the seven columns are "不適用", matching the legend — a blank cell
   // read as six missed days instead of one applicable one.

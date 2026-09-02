@@ -9,13 +9,20 @@ import { Plan } from './ui/Plan'
 import { UpdatePrompt } from './ui/UpdatePrompt'
 import { WeekView } from './ui/WeekView'
 
-type View = 'checkin' | 'week'
-type SubPage = 'plan' | 'data' | 'about' | null
+// 近一週 is a sub-page like the rest (owner 2026-09-02): a permanent
+// 打卡/近一週 switch cost a row on every screen for a view opened once a week.
+type SubPage = 'week' | 'plan' | 'data' | 'about' | null
+
+const SUBPAGE_TITLE = {
+  week: '近一週',
+  plan: '計畫',
+  data: '資料',
+  about: '關於',
+} as const
 
 export default function App() {
   const store = useStore()
   const [date, setDate] = useState(today())
-  const [view, setView] = useState<View>('checkin')
   const [menuOpen, setMenuOpen] = useState(false)
   const [subPage, setSubPage] = useState<SubPage>(null)
 
@@ -59,9 +66,19 @@ export default function App() {
             <button type="button" aria-label="返回" onClick={() => setSubPage(null)}>
               ← 返回
             </button>
-            <h1>{subPage === 'plan' ? '計畫' : subPage === 'data' ? '資料' : '關於'}</h1>
+            <h1>{SUBPAGE_TITLE[subPage]}</h1>
           </div>
-          {subPage === 'plan' ? (
+          {subPage === 'week' ? (
+            <WeekView
+              store={store}
+              date={date}
+              onDateChange={setDate}
+              onPickDate={(d) => {
+                setDate(d)
+                setSubPage(null)
+              }}
+            />
+          ) : subPage === 'plan' ? (
             <Plan store={store} />
           ) : subPage === 'data' ? (
             <DataPage store={store} />
@@ -135,39 +152,7 @@ export default function App() {
           </button>
         </header>
 
-        <div className="segmented" role="tablist" aria-label="檢視切換">
-          <button
-            type="button"
-            role="tab"
-            aria-pressed={view === 'checkin'}
-            aria-selected={view === 'checkin'}
-            onClick={() => setView('checkin')}
-          >
-            打卡
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-pressed={view === 'week'}
-            aria-selected={view === 'week'}
-            onClick={() => setView('week')}
-          >
-            近一週
-          </button>
-        </div>
-
-        {view === 'checkin' ? (
-          <CheckinView store={store} date={date} onOpenData={() => openSubPage('data')} />
-        ) : (
-          <WeekView
-            store={store}
-            date={date}
-            onPickDate={(d) => {
-              setDate(d)
-              setView('checkin')
-            }}
-          />
-        )}
+        <CheckinView store={store} date={date} onOpenData={() => openSubPage('data')} />
       </main>
 
       {menuOpen ? (
@@ -180,6 +165,9 @@ export default function App() {
                 ✕
               </button>
             </div>
+            <button type="button" className="menu-item" onClick={() => openSubPage('week')}>
+              📅 近一週（徽章矩陣）
+            </button>
             <button type="button" className="menu-item" onClick={() => openSubPage('plan')}>
               🎯 計畫（項目與標準）
             </button>

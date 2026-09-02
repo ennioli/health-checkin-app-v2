@@ -77,6 +77,13 @@ export function seedRecord(itemId: string, date: string, value: unknown) {
   }
 }
 
+/** 近一週 lives in the menu now, not on a permanent tab row. */
+export async function openWeek(page: Page) {
+  await page.getByRole('button', { name: '選單' }).click()
+  await page.getByRole('button', { name: /近一週/ }).click()
+  await expect(page.getByRole('heading', { name: '近一週' })).toBeVisible()
+}
+
 /**
  * Pin every category card open before the check-in screen first mounts.
  *
@@ -108,11 +115,11 @@ export async function restoreSeed(page: Page, payload: unknown) {
   await page.goto('./')
   await openAllCards(page)
   const onboard = page.getByRole('button', { name: /開始使用/ })
-  const tab = page.getByRole('tab', { name: '打卡' })
+  const bar = page.locator('.topbar')
   // Fresh contexts land on onboarding; already-onboarded ones on the app.
-  await expect(onboard.or(tab).first()).toBeVisible()
+  await expect(onboard.or(bar).first()).toBeVisible()
   if (await onboard.isVisible()) await onboard.click()
-  await expect(tab).toBeVisible()
+  await expect(bar).toBeVisible()
   await page.getByRole('button', { name: '選單' }).click()
   await page.getByRole('button', { name: /資料（備份・還原）/ }).click()
   await page.locator('input[type=file]').setInputFiles({
