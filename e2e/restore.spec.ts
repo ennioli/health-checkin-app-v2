@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openAllCards } from './seed'
 
 /**
  * A backup carrying two versions of the same item: a lenient one from June and
@@ -74,6 +75,7 @@ function historyBackup() {
 /** Reset, onboard, then open 資料 through the menu — its only entrance now. */
 async function resetToDataPage(page: Page) {
   await page.goto('./')
+  await openAllCards(page)
   await page.evaluate(async () => {
     await new Promise<void>((resolve) => {
       const req = indexedDB.deleteDatabase('health-checkin-v2')

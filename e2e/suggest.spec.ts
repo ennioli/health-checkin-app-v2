@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openAllCards } from './seed'
 
 function dayOffset(days: number): string {
   const d = new Date()
@@ -70,6 +71,7 @@ function strugglingBackup() {
 
 async function restoreInto(page: Page, payload: unknown) {
   await page.goto('./')
+  await openAllCards(page)
   await page.evaluate(async () => {
     await new Promise<void>((resolve) => {
       const req = indexedDB.deleteDatabase('health-checkin-v2')

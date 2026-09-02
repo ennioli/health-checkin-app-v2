@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openAllCards } from './seed'
 
 // Playwright's WebKit build errors out on reload under offline emulation with
 // a service worker registered, so this runs on Chromium. Real Safari/iOS
@@ -25,6 +26,7 @@ test('installed shell keeps working with the network cut', async ({ page, contex
     })
   })
   await page.goto('./')
+  await openAllCards(page)
   await page.getByRole('button', { name: /開始使用/ }).click()
   // Let setup finish writing before the network is pulled, otherwise the
   // reload can land on a half-written database rather than an offline failure.

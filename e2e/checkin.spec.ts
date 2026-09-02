@@ -503,33 +503,50 @@ test('cards fold to the clock, and a tap overrides it until the day turns', asyn
   const card = (label: string) => catCard(page, label)
   const open = (label: string) => card(label).locator('.cat-toggle')
 
-  // Morning: 飲食 and 健身 have not happened yet.
-  await page.clock.setFixedTime(new Date('2026-09-02T08:30:00'))
+  // The clock→bucket→defaults mapping is pinned in src/lib/collapse.test.ts.
+  // What matters here is that it reaches the DOM, so the expectation is derived
+  // the same way the app derives it — from the BROWSER's clock, which is not
+  // always the runner's: WebKit ignores a TZ set on the node process, and the
+  // app naturally answers to the clock the user is looking at.
+  const hour = await page.evaluate(() => new Date().getHours())
+  const morning = hour >= 4 && hour < 12
+  const folded = morning ? ['飲食', '健身'] : ['睡眠']
+  const openCards = morning ? ['睡眠'] : ['飲食', '健身']
+
   await page.evaluate(() => localStorage.removeItem('checkin-collapse-v1'))
   await page.reload()
-  await expect(open('睡眠')).toHaveAttribute('aria-expanded', 'true')
-  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'false')
-  await expect(open('健身')).toHaveAttribute('aria-expanded', 'false')
-  await expect(card('飲食').locator('.item-row')).toHaveCount(0)
-  // A shut card still reports: the weekly chips stay on its header.
-  await expect(card('飲食').locator('.chip').first()).toBeVisible()
+  for (const label of folded) {
+    await expect(open(label)).toHaveAttribute('aria-expanded', 'false')
+    await expect(card(label).locator('.item-row')).toHaveCount(0)
+  }
+  for (const label of openCards) {
+    await expect(open(label)).toHaveAttribute('aria-expanded', 'true')
+  }
 
-  // A tap wins over the clock, and survives a reload.
-  await open('飲食').click()
-  await expect(card('飲食').locator('.item-row')).toHaveCount(5)
-  await page.reload()
-  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'true')
-
-  // Crossing noon hands the layout back to the clock: 飲食 opens on its own,
-  // 睡眠 folds, and the morning override is gone rather than stuck.
-  await page.clock.setFixedTime(new Date('2026-09-02T14:00:00'))
-  await page.reload()
-  await expect(open('睡眠')).toHaveAttribute('aria-expanded', 'false')
-  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'true')
-  await expect(open('健身')).toHaveAttribute('aria-expanded', 'true')
-
-  // 血壓, 減重 and 心境 are never folded automatically.
+  // 血壓, 減重 and 心境 are never folded by the clock.
   for (const label of ['血壓', '減重', '心境']) {
     await expect(open(label)).toHaveAttribute('aria-expanded', 'true')
   }
+
+  // A shut card still reports — the weekly chips stay on its header.
+  await expect(catCard(page, '飲食').locator('.chip').first()).toBeVisible()
+
+  // A tap wins over the clock, in both directions, and survives a reload.
+  const shut = folded[0]
+  await open(shut).click()
+  await expect(card(shut).locator('.item-row').first()).toBeVisible()
+  await open(openCards[0]).click()
+  await expect(card(openCards[0]).locator('.item-row')).toHaveCount(0)
+
+  await page.reload()
+  await expect(open(shut)).toHaveAttribute('aria-expanded', 'true')
+  await expect(open(openCards[0])).toHaveAttribute('aria-expanded', 'false')
+
+  // A stored preference from another day is discarded, not carried forward.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('checkin-collapse-v1')!)
+    localStorage.setItem('checkin-collapse-v1', JSON.stringify({ ...raw, date: '2020-01-01' }))
+  })
+  await page.reload()
+  await expect(open(shut)).toHaveAttribute('aria-expanded', 'false')
 })
