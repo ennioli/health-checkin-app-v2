@@ -208,6 +208,27 @@ p {
   margin-bottom: 4px;
 }
 
+/* The card header doubles as its fold control (owner 2026-09-02). It must not
+   inherit the 44px button height — the header is 29px and six of them are on
+   screen — so the row itself is the target, wide rather than tall. */
+.cat-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.cat-toggle .chev {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .cat-head .cat-name {
   font-size: 1.1rem;
   font-weight: 700;

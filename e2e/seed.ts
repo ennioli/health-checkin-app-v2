@@ -78,12 +78,35 @@ export function seedRecord(itemId: string, date: string, value: unknown) {
 }
 
 /**
+ * Pin every category card open before the check-in screen first mounts.
+ *
+ * The card layout answers to the clock — 飲食/健身 fold before noon, 睡眠 after
+ * — so without this every test that taps a row would pass or fail depending on
+ * the hour it ran. The fold has its own tests, which clear this first.
+ */
+export async function openAllCards(page: Page) {
+  await page.evaluate(() => {
+    const now = new Date()
+    const p = (n: number) => String(n).padStart(2, '0')
+    localStorage.setItem(
+      'checkin-collapse-v1',
+      JSON.stringify({
+        date: `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`,
+        bucket: now.getHours() >= 4 && now.getHours() < 12 ? 'morning' : 'rest',
+        overrides: { bp: false, sleep: false, weight: false, diet: false, fitness: false, mind: false },
+      }),
+    )
+  })
+}
+
+/**
  * Full-replace the app's data with the seed through the real restore UI.
  * No manual DB wipe: restore IS the wipe, and deleteDatabase from a page
  * that holds an open connection just blocks (flaky on WebKit).
  */
 export async function restoreSeed(page: Page, payload: unknown) {
   await page.goto('./')
+  await openAllCards(page)
   const onboard = page.getByRole('button', { name: /開始使用/ })
   const tab = page.getByRole('tab', { name: '打卡' })
   // Fresh contexts land on onboarding; already-onboarded ones on the app.

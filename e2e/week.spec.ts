@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { restoreSeed, seedBackup } from './seed'
+import { openAllCards, restoreSeed, seedBackup } from './seed'
 
 async function resetAndOnboard(page: Page) {
   await page.goto('./')
@@ -12,6 +12,7 @@ async function resetAndOnboard(page: Page) {
     })
   })
   await page.goto('./')
+  await openAllCards(page)
   await page.getByRole('button', { name: /開始使用/ }).click()
   await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
 }

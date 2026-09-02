@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { dayOffset, restoreSeed, seedBackup, seedRecord } from './seed'
+import { dayOffset, openAllCards, restoreSeed, seedBackup, seedRecord } from './seed'
 
 function catCard(page: Page, label: string) {
   return page.locator('section.card').filter({
@@ -24,6 +24,7 @@ async function resetAndOnboard(page: Page) {
     })
   })
   await page.goto('./')
+  await openAllCards(page)
   await page.getByRole('button', { name: /開始使用/ }).click()
   await expect(page.getByRole('tab', { name: '打卡' })).toBeVisible()
 }
@@ -496,4 +497,39 @@ test('the week matrix marks days an item does not apply to', async ({ page }) =>
   // Six of the seven columns are "不適用", matching the legend — a blank cell
   // read as six missed days instead of one applicable one.
   await expect(row.locator('td', { hasText: '—' })).toHaveCount(6)
+})
+
+test('cards fold to the clock, and a tap overrides it until the day turns', async ({ page }) => {
+  const card = (label: string) => catCard(page, label)
+  const open = (label: string) => card(label).locator('.cat-toggle')
+
+  // Morning: 飲食 and 健身 have not happened yet.
+  await page.clock.setFixedTime(new Date('2026-09-02T08:30:00'))
+  await page.evaluate(() => localStorage.removeItem('checkin-collapse-v1'))
+  await page.reload()
+  await expect(open('睡眠')).toHaveAttribute('aria-expanded', 'true')
+  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'false')
+  await expect(open('健身')).toHaveAttribute('aria-expanded', 'false')
+  await expect(card('飲食').locator('.item-row')).toHaveCount(0)
+  // A shut card still reports: the weekly chips stay on its header.
+  await expect(card('飲食').locator('.chip').first()).toBeVisible()
+
+  // A tap wins over the clock, and survives a reload.
+  await open('飲食').click()
+  await expect(card('飲食').locator('.item-row')).toHaveCount(5)
+  await page.reload()
+  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'true')
+
+  // Crossing noon hands the layout back to the clock: 飲食 opens on its own,
+  // 睡眠 folds, and the morning override is gone rather than stuck.
+  await page.clock.setFixedTime(new Date('2026-09-02T14:00:00'))
+  await page.reload()
+  await expect(open('睡眠')).toHaveAttribute('aria-expanded', 'false')
+  await expect(open('飲食')).toHaveAttribute('aria-expanded', 'true')
+  await expect(open('健身')).toHaveAttribute('aria-expanded', 'true')
+
+  // 血壓, 減重 and 心境 are never folded automatically.
+  for (const label of ['血壓', '減重', '心境']) {
+    await expect(open(label)).toHaveAttribute('aria-expanded', 'true')
+  }
 })
