@@ -56,16 +56,25 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
     'true',
   )
 
-  // Numbers: weight starts at its muted default and records on change.
+  // Numbers: weight starts EMPTY with its default in the placeholder, and
+  // records on change.
   const weightInput = itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })
-  await expect(weightInput).toHaveValue('77.6')
+  await expect(weightInput).toHaveValue('')
+  await expect(weightInput).toHaveAttribute('placeholder', '77.6')
   await weightInput.fill('70.4')
 
-  // Blood pressure shows 120/80 as its default; editing one side commits
-  // both, the untouched side at its default. 早 and 晚 share one row behind a
-  // tab — 早 is the one on screen when the page opens.
-  await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('120')
-  await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('80')
+  // Blood pressure suggests 120/80 through the placeholders; editing one side
+  // commits both, the untouched side at its default. 早 and 晚 share one row
+  // behind a tab — 早 is the one on screen when the page opens.
+  await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveAttribute(
+    'placeholder',
+    '120',
+  )
+  await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveAttribute(
+    'placeholder',
+    '80',
+  )
+  await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('')
   await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveCount(0)
   await page.getByRole('spinbutton', { name: '早 收縮壓' }).fill('118')
 
@@ -87,10 +96,14 @@ test('one-tap check-in across control types, and it all survives a reload', asyn
   ).toHaveValue('70.4')
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveValue('118')
   await expect(page.getByRole('spinbutton', { name: '早 舒張壓' })).toHaveValue('80')
-  // The evening pair was never touched — still the uncommitted default, and it
-  // takes one tab tap to reach it.
+  // The evening pair was never touched — still empty behind its suggestion,
+  // and it takes one tab tap to reach it.
   await page.getByRole('button', { name: '切換到 晚' }).click()
-  await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveValue('120')
+  await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveValue('')
+  await expect(page.getByRole('spinbutton', { name: '晚 收縮壓' })).toHaveAttribute(
+    'placeholder',
+    '120',
+  )
   await expect(page.getByRole('spinbutton', { name: '早 收縮壓' })).toHaveCount(0)
 })
 
@@ -183,7 +196,11 @@ test('晨測體重 and 腰圍 share one row through the same switch', async ({ p
   await page.getByRole('button', { name: '切換到 晨測體重' }).click()
   await expect(page.getByRole('button', { name: '切換到 腰圍（已記錄）' })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveValue('77.6')
+  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveValue('')
+  await expect(page.getByRole('spinbutton', { name: '晨測體重' })).toHaveAttribute(
+    'placeholder',
+    '77.6',
+  )
   await page.getByRole('button', { name: '切換到 腰圍（已記錄）' }).click()
   await expect(page.getByRole('spinbutton', { name: '腰圍' })).toHaveValue('92')
 })
@@ -457,10 +474,19 @@ test('a number field opens on the value it last carried, not the preset default'
     ),
   )
 
-  // Today opens on 76.4 — muted, so it is still a suggestion and not a record.
+  // Today opens EMPTY with 76.4 in the placeholder — a suggestion you can type
+  // over, not a record. (Before 2026-09-13 it was the field's real value, so
+  // typing appended to it and clearing snapped it straight back.)
   const field = itemRow(page, '晨測體重').getByRole('spinbutton', { name: '晨測體重' })
-  await expect(field).toHaveValue('76.4')
-  await expect(field).toHaveAttribute('style', /--muted/)
+  await expect(field).toHaveValue('')
+  await expect(field).toHaveAttribute('placeholder', '76.4')
+
+  // Typing replaces rather than appends, and the field can be cleared.
+  await field.fill('75.8')
+  await expect(field).toHaveValue('75.8')
+  await field.fill('')
+  await expect(field).toHaveValue('')
+  await expect(field).toHaveAttribute('placeholder', '76.4')
 
   // The steppers still move in 0.1 kg — step follows the preset default, not
   // whatever happened to be recorded last.

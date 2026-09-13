@@ -828,6 +828,12 @@ h2 {
   appearance: textfield;
 }
 
+/* The suggestion (last recorded value) reads as a hint, not as a record. */
+.stepper input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 .stepper input::-webkit-inner-spin-button,
 .stepper input::-webkit-outer-spin-button {
   -webkit-appearance: none;

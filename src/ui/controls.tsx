@@ -105,27 +105,37 @@ export function Toggle({
 /**
  * Numeric field with explicit ▲▼ steppers. iOS renders no spinner on a bare
  * number input, so without these the phone would have no tap-to-adjust at
- * all. Stepping from an uncommitted default commits it (±step).
+ * all. Stepping from the suggestion commits it (±step).
+ *
+ * The suggestion (last recorded value, else the preset default) lives in the
+ * `placeholder`, never in `value` — it used to be real text in the field, and
+ * a suggestion you cannot type over is not a suggestion: the caret landed
+ * after it so one keystroke turned 79 into 798, and clearing the field wrote
+ * null, which put the suggestion straight back (owner report, 2026-09-13).
  */
 function NumField({
   ariaLabel,
   shown,
-  committed,
+  suggestion,
   step,
   disabled,
   onCommit,
 }: {
   ariaLabel: string
-  /** The string currently displayed (actual value or muted default). */
+  /** The recorded value as a string, or '' while nothing is recorded. */
   shown: string
-  committed: boolean
+  /** Muted hint shown while the field is empty; also the ▲▼ starting point. */
+  suggestion?: string
   step: number
   disabled?: boolean
   onCommit: (value: number | null, raw?: string) => void
 }) {
   const decimals = Number.isInteger(step) ? 0 : 1
   const bump = (dir: 1 | -1) => {
-    const base = shown === '' ? 0 : Number(shown)
+    // An empty field steps off the suggestion, so one tap still commits
+    // yesterday's value ±step rather than jumping to ±step from zero.
+    const from = shown !== '' ? shown : (suggestion ?? '')
+    const base = from === '' ? 0 : Number(from)
     const next = Number((base + dir * step).toFixed(decimals))
     onCommit(next)
   }
@@ -135,10 +145,9 @@ function NumField({
         type="number"
         inputMode="decimal"
         step={step}
-        placeholder="—"
+        placeholder={suggestion ?? '—'}
         aria-label={ariaLabel}
         disabled={disabled}
-        style={committed ? undefined : { color: 'var(--muted)' }}
         value={shown}
         onChange={(e) => onCommit(e.target.value === '' ? null : Number(e.target.value))}
       />
@@ -157,9 +166,10 @@ function NumField({
 /**
  * Systolic/diastolic pair stored as a single "120/80" string.
  *
- * With no record yet, the preset default is shown muted. Nothing is written
- * until the user touches a field — and the first edit commits both sides, the
- * untouched one at its default, so "adjust one number" is a one-step act.
+ * With no record yet both halves are empty and the preset default sits in
+ * their placeholders. Nothing is written until the user touches a field — and
+ * the first edit commits both sides, the untouched one at its default, so
+ * "adjust one number" stays a one-step act.
  */
 export function BPInput({
   label,
@@ -176,7 +186,10 @@ export function BPInput({
 }) {
   const committed = typeof value === 'string'
   const [defSys, defDia] = (fallback ?? '/').split('/')
-  const [sys, dia] = committed ? (value as string).split('/') : [defSys ?? '', defDia ?? '']
+  const [sys, dia] = committed ? (value as string).split('/') : ['', '']
+  // What an edit to one half commits the other, untouched half at.
+  const baseSys = sys !== '' ? sys : (defSys ?? '')
+  const baseDia = dia !== '' ? dia : (defDia ?? '')
   const emit = (s: string, d: string) => {
     if (s === '' && d === '') onChange(null)
     else onChange(`${s}/${d}`)
@@ -186,19 +199,19 @@ export function BPInput({
       <NumField
         ariaLabel={`${label} 收縮壓`}
         shown={sys ?? ''}
-        committed={committed}
+        suggestion={defSys || undefined}
         step={1}
         disabled={disabled}
-        onCommit={(v) => emit(v === null ? '' : String(v), dia ?? '')}
+        onCommit={(v) => emit(v === null ? '' : String(v), baseDia)}
       />
       <span className="muted">/</span>
       <NumField
         ariaLabel={`${label} 舒張壓`}
         shown={dia ?? ''}
-        committed={committed}
+        suggestion={defDia || undefined}
         step={1}
         disabled={disabled}
-        onCommit={(v) => emit(sys ?? '', v === null ? '' : String(v))}
+        onCommit={(v) => emit(baseSys, v === null ? '' : String(v))}
       />
     </div>
   )
@@ -410,16 +423,17 @@ export function ItemControl({
         </div>
       )
     default: {
-      // number / duration. With no record yet, the preset default is shown
-      // muted; only a user change writes anything.
+      // number / duration. With no record yet the field is empty and the
+      // suggestion (last recorded value, else the preset default) sits in the
+      // placeholder; only a user change writes anything.
       const committed = typeof value === 'number'
-      const shown = committed
-        ? String(value)
-        : typeof carried === 'number'
+      const shown = committed ? String(value) : ''
+      const suggestion =
+        typeof carried === 'number'
           ? String(carried)
           : typeof fallback === 'number'
             ? String(fallback)
-            : ''
+            : undefined
       // Step size stays tied to the preset default, not to whatever was last
       // recorded — a morning that happened to weigh exactly 77 must not turn
       // the ▲▼ buttons into 1 kg jumps.
@@ -429,7 +443,7 @@ export function ItemControl({
           <NumField
             ariaLabel={item.name}
             shown={shown}
-            committed={committed}
+            suggestion={suggestion}
             step={step}
             disabled={disabled}
             onCommit={(v) => onChange(v)}
